@@ -16,10 +16,10 @@ import kotlin.test.assertEquals
 
 @KtorExperimentalAPI
 @SpringBootTest(properties=["gateway.tcp_server.port=9000"])
-internal class TcpServerTest {
+internal class TcpEchoServerTest {
 
     @Autowired
-    private lateinit var tcpServer: TcpServer
+    private lateinit var tcpServer: TcpEchoServer
 
     @Test
     fun connect() = runBlocking {
