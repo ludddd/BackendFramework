@@ -17,9 +17,6 @@
 # # Work around https://youtrack.jetbrains.com/issue/IDEA-116898
 # gradle/wrapper/gradle-wrapper.properties
 
-### Gradle Patch ###
-**/build/
-
 # End of https://www.gitignore.io/api/gradle
 
 # Created by https://www.gitignore.io/api/intellij
@@ -53,3 +50,5 @@
 **/.idea/**/libraries
 
 # End of https://www.gitignore.io/api/intellij
+
+**/gen/**/*.*

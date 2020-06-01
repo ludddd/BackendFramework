@@ -1,16 +1,30 @@
+import com.google.protobuf.gradle.generateProtoTasks
+import com.google.protobuf.gradle.protobuf
+import com.google.protobuf.gradle.protoc
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 java.sourceCompatibility = JavaVersion.VERSION_11
 val ktor_version: String by project
 val kotlin_version: String by project
 val spring_boot_version: String by project
+val protobuf_version: String by project
 
 plugins {
     id("org.springframework.boot") version "2.3.0.RELEASE"
     id("io.spring.dependency-management") version "1.0.9.RELEASE"
     kotlin("jvm") version "1.3.72"
     kotlin("plugin.spring") version "1.3.72"
+    id("com.google.protobuf") version "0.8.12"
+    idea
 }
+
+/*sourceSets{
+    main {
+        proto {
+            srcDir("src/main/proto")
+        }
+    }
+}*/
 
 dependencies {
     implementation("org.springframework.boot:spring-boot-starter:$spring_boot_version")
@@ -23,6 +37,10 @@ dependencies {
     implementation("io.ktor:ktor-network:$ktor_version")
     testImplementation("io.ktor:ktor-server-tests:$ktor_version")
     implementation("io.github.microutils:kotlin-logging:1.7.9")
+
+    implementation("com.google.protobuf:protobuf-gradle-plugin:0.8.12")
+    implementation("org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version")
+    implementation("com.google.protobuf:protobuf-java:3.12.2")
 }
 
 tasks.withType<Test> {
@@ -35,3 +53,23 @@ tasks.withType<KotlinCompile> {
         jvmTarget = "1.8"
     }
 }
+
+protobuf {
+    generatedFilesBaseDir = "$projectDir/gen"
+    protoc {
+        artifact = "com.google.protobuf:protoc:3.12.2"
+    }
+    generateProtoTasks {
+    }
+}
+
+tasks {
+    clean {
+        delete(protobuf.protobuf.generatedFilesBaseDir)
+    }
+}
+
+idea.module {
+
+}
+

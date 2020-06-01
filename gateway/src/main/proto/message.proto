@@ -1,0 +1,6 @@
+syntax = "proto3";
+
+message RpcMessage {
+    string service = 1;
+    bytes data = 2;
+}
