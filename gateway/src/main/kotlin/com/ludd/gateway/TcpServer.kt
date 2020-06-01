@@ -43,7 +43,9 @@ class TcpServer: CoroutineScope {
                 try {
                     while (true) {
                         val line = read.readUTF8Line()
+                        print("received: $line")
                         write.writeStringUtf8("$line\n")
+                        print("send: $line")
                     }
                 } catch (e: Throwable) {
                     withContext(Dispatchers.IO) {
