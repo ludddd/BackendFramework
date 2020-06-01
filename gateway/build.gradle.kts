@@ -22,6 +22,7 @@ dependencies {
     implementation("io.ktor:ktor-server-netty:$ktor_version")
     implementation("io.ktor:ktor-network:$ktor_version")
     testImplementation("io.ktor:ktor-server-tests:$ktor_version")
+    implementation("io.github.microutils:kotlin-logging:1.7.9")
 }
 
 tasks.withType<Test> {

@@ -7,6 +7,7 @@ subprojects {
 
 allprojects {
 	repositories {
+		mavenCentral()
 		mavenLocal()
 		jcenter()
 		maven { url = uri("https://kotlin.bintray.com/ktor") }

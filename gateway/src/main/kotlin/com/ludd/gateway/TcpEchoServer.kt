@@ -8,12 +8,15 @@ import io.ktor.util.KtorExperimentalAPI
 import io.ktor.utils.io.readUTF8Line
 import io.ktor.utils.io.writeStringUtf8
 import kotlinx.coroutines.*
+import mu.KotlinLogging
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty
 import org.springframework.stereotype.Component
 import javax.annotation.PostConstruct
 import javax.annotation.PreDestroy
 import kotlin.coroutines.CoroutineContext
+
+private val logger = KotlinLogging.logger {}
 
 @KtorExperimentalAPI
 @Component
@@ -36,21 +39,22 @@ class TcpEchoServer: CoroutineScope {
     fun start() {
         serverJob = launch {
             val serverSocket = aSocket(selectorManager).tcp().bind(port = getPort())
-            println("Echo Server listening at ${serverSocket.localAddress}")
+            logger.info("Tcp Echo Server listening at ${serverSocket.localAddress}")
             while (isActive) {
                 val socket = serverSocket.accept()
-                println("Accepted $socket")
+                logger.info("Accepted $socket")
                 launch {
                     val read = socket.openReadChannel()
                     val write = socket.openWriteChannel(autoFlush = true)
                     try {
                         while (true) {
                             val line = read.readUTF8Line()
-                            print("received: $line")
+                            logger.debug("received: $line")
                             write.writeStringUtf8("$line\n")
-                            print("send: $line")
+                            logger.debug("send: $line")
                         }
                     } catch (e: Throwable) {
+                        logger.error(e) { "error while processing incoming messages" }
                         withContext(Dispatchers.IO) {
                             socket.close()
                         }
@@ -62,6 +66,7 @@ class TcpEchoServer: CoroutineScope {
 
     @PreDestroy
     fun stop() = runBlocking{
+        logger.info("Stopping server...")
         job.cancelAndJoin()
     }
 }
