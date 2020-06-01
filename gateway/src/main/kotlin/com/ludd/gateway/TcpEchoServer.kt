@@ -53,6 +53,8 @@ class TcpEchoServer: CoroutineScope {
                             write.writeStringUtf8("$line\n")
                             logger.debug("send: $line")
                         }
+                    } catch (e: CancellationException) {
+                        logger.info("server job is cancelled")
                     } catch (e: Throwable) {
                         logger.error(e) { "error while processing incoming messages" }
                         withContext(Dispatchers.IO) {
