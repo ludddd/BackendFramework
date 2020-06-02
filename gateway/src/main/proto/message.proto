@@ -1,4 +1,5 @@
 syntax = "proto3";
+package com.ludd.gateway.to;
 
 message RpcMessage {
     string service = 1;
