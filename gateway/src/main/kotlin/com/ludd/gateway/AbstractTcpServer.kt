@@ -11,6 +11,7 @@ import io.ktor.utils.io.ByteWriteChannel
 import kotlinx.coroutines.*
 import mu.KotlinLogging
 import org.springframework.beans.factory.annotation.Value
+import java.util.concurrent.atomic.AtomicInteger
 import javax.annotation.PostConstruct
 import javax.annotation.PreDestroy
 import kotlin.coroutines.CoroutineContext
@@ -29,6 +30,7 @@ abstract class AbstractTcpServer: CoroutineScope {
     private val selectorManager = ActorSelectorManager(Dispatchers.IO)
     private lateinit var serverJob: Job
     fun getPort() = port.toInt()
+    private val sessionCount = AtomicInteger(0)
 
     @PostConstruct
     fun start() {
@@ -47,8 +49,10 @@ abstract class AbstractTcpServer: CoroutineScope {
     }
 
     private fun startSession(socket: Socket) {
+        sessionCount.incrementAndGet()
         launch {
-            logger.info("start session with ${socket.remoteAddress}")
+            val remoteAddress = socket.remoteAddress
+            logger.info("start session with $remoteAddress")
             socket.use {
                 val read = socket.openReadChannel()
                 val write = socket.openWriteChannel(autoFlush = true)
@@ -56,7 +60,8 @@ abstract class AbstractTcpServer: CoroutineScope {
                     processMessages(read, write)
                 }
             }
-            logger.info("End session with ${socket.remoteAddress}")
+            logger.info("End session with $remoteAddress")
+            sessionCount.decrementAndGet()
         }
     }
 
@@ -69,4 +74,6 @@ abstract class AbstractTcpServer: CoroutineScope {
         job.cancelAndJoin()
         logger.info("Server is stopped")
     }
+
+    fun getSessionCount() = sessionCount.get()
 }

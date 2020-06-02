@@ -1,14 +1,12 @@
 package com.ludd.gateway
 
 import io.ktor.network.selector.ActorSelectorManager
-import io.ktor.network.sockets.aSocket
-import io.ktor.network.sockets.openReadChannel
-import io.ktor.network.sockets.openWriteChannel
+import io.ktor.network.sockets.*
 import io.ktor.util.KtorExperimentalAPI
-import io.ktor.utils.io.readUTF8Line
 import io.ktor.utils.io.writeStringUtf8
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withContext
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
@@ -25,13 +23,30 @@ internal class TcpEchoServerTest {
 
     @Test
     fun connect() = runBlocking {
-        val selectorManager = ActorSelectorManager(Dispatchers.IO)
-        val socket = aSocket(selectorManager).tcp().connect("127.0.0.1", port = tcpServer.getPort())
+        val socket = connectLocal()
         val read = socket.openReadChannel()
         val write = socket.openWriteChannel(autoFlush = true)
 
         write.writeStringUtf8("aaa\n")
 
-        assertEquals("aaa", read.readUTF8Line())
+        assertEquals("aaa", read.readUTF8Line(100))
+    }
+
+    @Test
+    fun clientDisconnected() = runBlocking {
+        val socket = connectLocal()
+        val write = socket.openWriteChannel(autoFlush = true)
+        write.writeStringUtf8("aaa\n")
+        withContext(Dispatchers.IO) {
+            println("close client socket")
+            socket.close()
+            socket.awaitClosed()
+            println("client socket is closed")
+        }
+    }
+
+    private suspend fun connectLocal(): Socket {
+        val selectorManager = ActorSelectorManager(Dispatchers.IO)
+        return aSocket(selectorManager).tcp().connect("127.0.0.1", port = tcpServer.getPort())
     }
 }
