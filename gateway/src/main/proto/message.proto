@@ -5,3 +5,12 @@ message RpcMessage {
     string service = 1;
     bytes data = 2;
 }
+
+message RpcRequest {
+    string service = 1;
+    bytes arg = 2;
+}
+
+message RpcResponse {
+    bytes result = 1;
+}
