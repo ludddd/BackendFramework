@@ -1,0 +1,10 @@
+syntax = "proto3";
+package com.ludd.echo.to;
+
+message Message {
+    string data = 1;
+}
+
+service EchoService {
+    rpc echo(Message) returns (Message) {}
+}
