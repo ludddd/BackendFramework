@@ -36,6 +36,11 @@ subprojects {
 	apply(plugin = "org.jetbrains.kotlin.plugin.spring")
 	apply(plugin = "org.gradle.idea")
 
+	configure<JavaPluginExtension> {
+		sourceCompatibility = JavaVersion.VERSION_11
+		targetCompatibility = JavaVersion.VERSION_11
+	}
+
 	dependencies {
 		"implementation"("org.springframework.boot:spring-boot-starter:$spring_boot_version")
 		"implementation"("org.jetbrains.kotlin:kotlin-reflect:$kotlin_version")

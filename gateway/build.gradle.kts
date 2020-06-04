@@ -1,4 +1,3 @@
-java.sourceCompatibility = JavaVersion.VERSION_11
 val ktor_version: String by project
 
 dependencies {
@@ -8,6 +7,5 @@ dependencies {
 }
 
 idea.module {
-
 }
 
