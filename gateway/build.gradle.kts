@@ -3,12 +3,6 @@ import com.google.protobuf.gradle.protobuf
 import com.google.protobuf.gradle.protoc
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
-plugins {
-    kotlin("jvm")
-    kotlin("plugin.spring")
-    idea
-}
-
 java.sourceCompatibility = JavaVersion.VERSION_11
 val ktor_version: String by project
 val kotlin_version: String by project

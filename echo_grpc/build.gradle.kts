@@ -1,12 +1,6 @@
 import com.google.protobuf.gradle.*
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
-plugins {
-    kotlin("jvm")
-    kotlin("plugin.spring")
-    idea
-}
-
 java.sourceCompatibility = JavaVersion.VERSION_11
 val kotlin_version: String by project
 val spring_boot_version: String by project
