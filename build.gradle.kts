@@ -5,15 +5,6 @@ subprojects {
 	version = "0.0.1"
 }
 
-allprojects {
-	repositories {
-		mavenCentral()
-		mavenLocal()
-		jcenter()
-		maven { url = uri("https://kotlin.bintray.com/ktor") }
-	}
-}
-
 plugins {
 	id("org.springframework.boot") version "2.3.0.RELEASE" apply(false)
 	id("io.spring.dependency-management") version "1.0.9.RELEASE" apply(false)
@@ -22,4 +13,15 @@ plugins {
 	id("com.google.protobuf") version "0.8.12" apply(false)
 }
 
+subprojects {
+	repositories {
+		mavenCentral()
+		mavenLocal()
+		jcenter()
+		maven { url = uri("https://kotlin.bintray.com/ktor") }
+	}
 
+	apply(plugin = "org.springframework.boot")
+	apply(plugin = "io.spring.dependency-management")
+	apply(plugin = "com.google.protobuf")
+}
