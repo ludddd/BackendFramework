@@ -63,8 +63,9 @@ subprojects {
 		}
 	}
 
+	val generatedSrcPath = "$projectDir/gen"
 	protobuf {
-		generatedFilesBaseDir = "$projectDir/gen"
+		generatedFilesBaseDir = generatedSrcPath
 		protoc {
 			artifact = "com.google.protobuf:protoc:3.12.2"
 		}
@@ -82,5 +83,9 @@ subprojects {
 				}
 			}
 		}
+	}
+
+	tasks.withType<Delete> {
+		delete(generatedSrcPath)
 	}
 }

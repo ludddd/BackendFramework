@@ -7,12 +7,6 @@ dependencies {
     testImplementation("io.ktor:ktor-server-tests:$ktor_version")
 }
 
-tasks {
-    clean {
-        delete(protobuf.protobuf.generatedFilesBaseDir)
-    }
-}
-
 idea.module {
 
 }
