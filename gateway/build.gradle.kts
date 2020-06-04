@@ -3,20 +3,20 @@ import com.google.protobuf.gradle.protobuf
 import com.google.protobuf.gradle.protoc
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
+plugins {
+    id("org.springframework.boot")
+    id("io.spring.dependency-management")
+    kotlin("jvm")
+    kotlin("plugin.spring")
+    id("com.google.protobuf")
+    idea
+}
+
 java.sourceCompatibility = JavaVersion.VERSION_11
 val ktor_version: String by project
 val kotlin_version: String by project
 val spring_boot_version: String by project
 val protobuf_version: String by project
-
-plugins {
-    id("org.springframework.boot") version "2.3.0.RELEASE"
-    id("io.spring.dependency-management") version "1.0.9.RELEASE"
-    kotlin("jvm") version "1.3.72"
-    kotlin("plugin.spring") version "1.3.72"
-    id("com.google.protobuf") version "0.8.12"
-    idea
-}
 
 dependencies {
     implementation("org.springframework.boot:spring-boot-starter:$spring_boot_version")
