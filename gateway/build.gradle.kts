@@ -1,8 +1,5 @@
 java.sourceCompatibility = JavaVersion.VERSION_11
 val ktor_version: String by project
-val kotlin_version: String by project
-val spring_boot_version: String by project
-val protobuf_version: String by project
 
 dependencies {
     implementation("io.ktor:ktor-server-netty:$ktor_version")
