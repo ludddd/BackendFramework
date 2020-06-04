@@ -64,7 +64,7 @@ subprojects {
 	tasks.withType<KotlinCompile> {
 		kotlinOptions {
 			freeCompilerArgs = listOf("-Xjsr305=strict", "-Xuse-experimental=kotlin.Experimental")
-			jvmTarget = "1.8"   //TODO: make it 11
+			jvmTarget = "11"
 		}
 	}
 
