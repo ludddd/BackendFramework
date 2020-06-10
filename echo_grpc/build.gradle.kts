@@ -55,4 +55,4 @@ val integrationTest = task<Test>("integrationTest") {
     finalizedBy(stopMyAppContainer)
 }
 
-tasks.check { dependsOn(integrationTest) }
+//tasks.check { dependsOn(integrationTest) }
