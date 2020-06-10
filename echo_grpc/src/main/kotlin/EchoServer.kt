@@ -50,9 +50,11 @@ class EchoServer(
     }
 
     companion object {
+        const val DEFAULT_PORT = 9000
+
         @JvmStatic
         fun main(args: Array<String>) {
-            val port = 9000
+            val port = DEFAULT_PORT
             val server = EchoServer(port)
             server.start()
             server.awaitTermination()
