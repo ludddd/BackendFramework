@@ -1,7 +1,7 @@
 package com.ludd.gateway
 
 import com.google.protobuf.ByteString
-import com.ludd.gateway.to.Message
+import com.ludd.rpc.to.Message
 import io.ktor.network.selector.ActorSelectorManager
 import io.ktor.network.sockets.aSocket
 import io.ktor.network.sockets.openReadChannel

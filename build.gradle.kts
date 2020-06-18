@@ -44,7 +44,7 @@ subprojects {
 	dependencies {
 		"implementation"("org.springframework.boot:spring-boot-starter:$spring_boot_version")
 		"implementation"("org.jetbrains.kotlin:kotlin-reflect:$kotlin_version")
-		"implementation"("org.jetbrains.kotlin:kotlin-stdlib-jdk8:$kotlin_version")
+		"implementation"("org.jetbrains.kotlin:kotlin-stdlib:$kotlin_version")
 		"implementation"("io.github.microutils:kotlin-logging:1.7.9")
 		"implementation"("com.google.protobuf:protobuf-gradle-plugin:0.8.12")
 		"implementation"("org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version")

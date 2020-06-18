@@ -5,6 +5,9 @@
       <module name="BackendFramework.echo" target="11" />
       <module name="BackendFramework.echo.main" target="11" />
       <module name="BackendFramework.echo.test" target="11" />
+      <module name="BackendFramework.echo_lib" target="11" />
+      <module name="BackendFramework.echo_lib.main" target="11" />
+      <module name="BackendFramework.echo_lib.test" target="11" />
       <module name="BackendFramework.main" target="11" />
       <module name="BackendFramework.test" target="11" />
     </bytecodeTargetLevel>
