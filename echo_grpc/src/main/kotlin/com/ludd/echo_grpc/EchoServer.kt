@@ -1,8 +1,9 @@
+package com.ludd.echo_grpc
+
 import io.grpc.Server
 import io.grpc.ServerBuilder
 import mu.KotlinLogging
 import java.util.concurrent.TimeUnit
-
 
 private val logger = KotlinLogging.logger {}
 

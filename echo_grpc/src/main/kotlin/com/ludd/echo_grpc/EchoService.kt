@@ -1,3 +1,5 @@
+package com.ludd.echo_grpc
+
 import com.ludd.echo.to.Echo
 import com.ludd.echo.to.EchoServiceGrpc
 import io.grpc.stub.StreamObserver
