@@ -10,7 +10,6 @@ import io.ktor.utils.io.ByteReadChannel
 import io.ktor.utils.io.ByteWriteChannel
 import kotlinx.coroutines.*
 import mu.KotlinLogging
-import org.springframework.beans.factory.annotation.Value
 import java.util.concurrent.atomic.AtomicInteger
 import javax.annotation.PostConstruct
 import javax.annotation.PreDestroy
@@ -19,17 +18,14 @@ import kotlin.coroutines.CoroutineContext
 private val logger = KotlinLogging.logger {}
 
 @KtorExperimentalAPI
-abstract class AbstractTcpServer: CoroutineScope {
+abstract class AbstractTcpServer(private val port:Int): CoroutineScope {
     protected val job = Job()
     override val coroutineContext: CoroutineContext
         get() = Dispatchers.Default + job
 
-    @Suppress("PLATFORM_CLASS_MAPPED_TO_KOTLIN")
-    @Value("\${gateway.tcp_server.port}")
-    private lateinit var port: Integer
     private val selectorManager = ActorSelectorManager(Dispatchers.IO)
     private lateinit var serverJob: Job
-    fun getPort() = port.toInt()
+    fun getPort() = port
     private val sessionCount = AtomicInteger(0)
 
     @PostConstruct

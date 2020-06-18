@@ -11,6 +11,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import mu.KotlinLogging
 import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.beans.factory.annotation.Value
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty
 import org.springframework.stereotype.Component
 
@@ -19,7 +20,8 @@ private val logger = KotlinLogging.logger {}
 @KtorExperimentalAPI
 @Component
 @ConditionalOnProperty(name = ["gateway.tcp_server.type"], havingValue = "gateway")
-class GatewayServer: AbstractTcpServer() {
+@Suppress("PLATFORM_CLASS_MAPPED_TO_KOTLIN")
+class GatewayServer(@Value("\${gateway.tcp_server.port}") port: Integer): AbstractTcpServer(port.toInt()) {
 
     @Autowired
     private lateinit var serviceProvider: IRpcServiceProvider

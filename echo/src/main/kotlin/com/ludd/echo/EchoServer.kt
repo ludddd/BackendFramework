@@ -9,11 +9,13 @@ import io.ktor.utils.io.jvm.javaio.toInputStream
 import io.ktor.utils.io.jvm.javaio.toOutputStream
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Component
 
 @KtorExperimentalAPI
 @Component
-class EchoServer: AbstractTcpServer() {
+@Suppress("PLATFORM_CLASS_MAPPED_TO_KOTLIN")
+class EchoServer(@Value("\${echo_server.port}") port: Integer): AbstractTcpServer(port.toInt()) {
     override suspend fun processMessages(read: ByteReadChannel, write: ByteWriteChannel) {
         val message = withContext(Dispatchers.IO) {
             Message.RpcRequest.parseDelimitedFrom(read.toInputStream(job))
