@@ -12,16 +12,23 @@ import io.ktor.utils.io.jvm.javaio.toOutputStream
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
+import mu.KotlinLogging
 import org.junit.After
 import org.junit.Before
 import org.junit.jupiter.api.Tag
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.Timeout
+import org.slf4j.LoggerFactory
 import org.testcontainers.containers.GenericContainer
+import org.testcontainers.containers.output.Slf4jLogConsumer
 import org.testcontainers.junit.jupiter.Testcontainers
 import java.nio.charset.Charset
 import java.time.Duration
+import java.util.concurrent.TimeUnit
 
 class KGenericContainer(imageName: String) : GenericContainer<KGenericContainer>(imageName)
+
+private val logger = KotlinLogging.logger {}
 
 @KtorExperimentalAPI
 @Tag("integration")
@@ -31,10 +38,15 @@ class EchoIntegrationTest {
     private val echo = KGenericContainer("echo")
         .withExposedPorts(9000)
         .withStartupTimeout(Duration.ofMinutes(5))
+        .apply {
+            followOutput(Slf4jLogConsumer(LoggerFactory.getLogger("echo_docker")))
+        }
+
 
     @Before
     fun setUp() = runBlocking {
         echo.start()
+        logger.info("docker initialized")
     }
 
     @After
@@ -43,6 +55,7 @@ class EchoIntegrationTest {
     }
 
     @Test
+    @Timeout(1, unit = TimeUnit.MINUTES)
     fun directConnect() = runBlocking{
         val selectorManager = ActorSelectorManager(Dispatchers.IO)
         val socket = aSocket(selectorManager).tcp().connect("127.0.0.1", port = 9000)
