@@ -72,4 +72,8 @@ abstract class AbstractTcpServer(private val port:Int): CoroutineScope {
     }
 
     fun getSessionCount() = sessionCount.get()
+
+    fun waitTillTermination() = runBlocking {
+        job.join()
+    }
 }
