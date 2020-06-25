@@ -9,8 +9,11 @@ import io.ktor.utils.io.jvm.javaio.toInputStream
 import io.ktor.utils.io.jvm.javaio.toOutputStream
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import mu.KotlinLogging
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Component
+
+private val logger = KotlinLogging.logger {}
 
 @KtorExperimentalAPI
 @Component
@@ -19,6 +22,10 @@ class EchoServer(@Value("\${echo_server.port}") port: Integer): AbstractTcpServe
     override suspend fun processMessages(read: ByteReadChannel, write: ByteWriteChannel) {
         val message = withContext(Dispatchers.IO) {
             Message.RpcRequest.parseDelimitedFrom(read.toInputStream(job))
+        }
+        if (message == null) {
+            logger.warn("Failed to read incomming message")
+            return
         }
         val response = Message.RpcResponse.newBuilder().setResult(message.arg).build()
         withContext(Dispatchers.IO) {

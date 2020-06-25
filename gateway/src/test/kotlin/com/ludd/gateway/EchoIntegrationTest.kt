@@ -13,14 +13,8 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
 import mu.KotlinLogging
-import org.junit.After
-import org.junit.Before
-import org.junit.jupiter.api.Tag
-import org.junit.jupiter.api.Test
-import org.junit.jupiter.api.Timeout
-import org.slf4j.LoggerFactory
+import org.junit.jupiter.api.*
 import org.testcontainers.containers.GenericContainer
-import org.testcontainers.containers.output.Slf4jLogConsumer
 import org.testcontainers.junit.jupiter.Testcontainers
 import java.nio.charset.Charset
 import java.time.Duration
@@ -35,21 +29,19 @@ private val logger = KotlinLogging.logger {}
 @Testcontainers
 class EchoIntegrationTest {
 
-    private val echo = KGenericContainer("echo")
+    private val echo = KGenericContainer("ludd.echo:0.1")
         .withExposedPorts(9000)
         .withStartupTimeout(Duration.ofMinutes(5))
-        .apply {
-            followOutput(Slf4jLogConsumer(LoggerFactory.getLogger("echo_docker")))
-        }
 
-
-    @Before
+    @BeforeEach
     fun setUp() = runBlocking {
         echo.start()
+        logger.info("Container Id: ${echo.containerId}")
+        logger.info { echo.containerInfo }
         logger.info("docker initialized")
     }
 
-    @After
+    @AfterEach
     fun tearDown()  = runBlocking {
         echo.stop()
     }
@@ -58,7 +50,9 @@ class EchoIntegrationTest {
     @Timeout(1, unit = TimeUnit.MINUTES)
     fun directConnect() = runBlocking{
         val selectorManager = ActorSelectorManager(Dispatchers.IO)
-        val socket = aSocket(selectorManager).tcp().connect("127.0.0.1", port = 9000)
+        val port = echo.getMappedPort(9000)
+        logger.info("Connecting to ${echo.host}:$port")
+        val socket = aSocket(selectorManager).tcp().connect(echo.host, port = port)
         val write = socket.openWriteChannel(autoFlush = true)
         val read = socket.openReadChannel()
 

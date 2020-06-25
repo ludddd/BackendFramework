@@ -23,6 +23,6 @@ val integrationTest = task<Test>("integrationTest") {
         includeTags("integration")
     }
 
-    dependsOn(":echo:createContainer")
+    dependsOn(":echo:dockerBuildImage")
 }
 
