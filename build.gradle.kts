@@ -29,18 +29,13 @@ subprojects {
 		maven { url = uri("https://kotlin.bintray.com/ktor") }
 	}
 
-	apply(plugin = "com.ludd.backend-framework")
 	apply(plugin = "org.springframework.boot")
 	apply(plugin = "io.spring.dependency-management")
 	apply(plugin = "com.google.protobuf")
 	apply(plugin = "org.jetbrains.kotlin.jvm")
 	apply(plugin = "org.jetbrains.kotlin.plugin.spring")
 	apply(plugin = "org.gradle.idea")
-
-	configure<JavaPluginExtension> {
-		sourceCompatibility = JavaVersion.VERSION_11
-		targetCompatibility = JavaVersion.VERSION_11
-	}
+	apply(plugin = "com.ludd.backend-framework")
 
 	dependencies {
 		"implementation"("org.springframework.boot:spring-boot-starter:$spring_boot_version")
