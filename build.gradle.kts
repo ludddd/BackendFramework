@@ -29,12 +29,6 @@ subprojects {
 		maven { url = uri("https://kotlin.bintray.com/ktor") }
 	}
 
-	apply(plugin = "org.springframework.boot")
-	apply(plugin = "io.spring.dependency-management")
-	apply(plugin = "com.google.protobuf")
-	apply(plugin = "org.jetbrains.kotlin.jvm")
-	apply(plugin = "org.jetbrains.kotlin.plugin.spring")
-	apply(plugin = "org.gradle.idea")
 	apply(plugin = "com.ludd.backend-framework")
 
 	dependencies {
