@@ -6,6 +6,7 @@ import org.gradle.api.Project
 import org.gradle.api.plugins.JavaPluginExtension
 import org.gradle.api.tasks.testing.Test
 import org.gradle.kotlin.dsl.*
+import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 class CommonConfigPlugin : Plugin<Project> {
     override fun apply(project: Project): Unit = project.run {
@@ -48,5 +49,13 @@ class CommonConfigPlugin : Plugin<Project> {
                 excludeTags("integration")
             }
         }
+
+        tasks.withType<KotlinCompile> {
+            kotlinOptions {
+                freeCompilerArgs = listOf("-Xjsr305=strict", "-Xuse-experimental=kotlin.Experimental")
+                jvmTarget = "11"
+            }
+        }
+
     }
 }
