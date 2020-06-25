@@ -4,6 +4,7 @@ plugins {
 
 repositories {
     jcenter()
+    mavenCentral()
 }
 
 val kotlin_version: String by project
