@@ -31,11 +31,7 @@ subprojects {
 
 	apply(plugin = "com.ludd.backend-framework")
 
-	tasks.withType<Test> {
-		useJUnitPlatform() {
-			excludeTags("integration")
-		}
-	}
+
 
 	tasks.withType<KotlinCompile> {
 		kotlinOptions {

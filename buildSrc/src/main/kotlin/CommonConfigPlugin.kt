@@ -4,6 +4,7 @@ import org.gradle.api.JavaVersion
 import org.gradle.api.Plugin
 import org.gradle.api.Project
 import org.gradle.api.plugins.JavaPluginExtension
+import org.gradle.api.tasks.testing.Test
 import org.gradle.kotlin.dsl.*
 
 class CommonConfigPlugin : Plugin<Project> {
@@ -39,6 +40,13 @@ class CommonConfigPlugin : Plugin<Project> {
         configure<JavaPluginExtension> {
             sourceCompatibility = JavaVersion.VERSION_11
             targetCompatibility = JavaVersion.VERSION_11
+        }
+
+        tasks.withType<Test> {
+            useJUnitPlatform() {
+                //TODO: use source set as recomended
+                excludeTags("integration")
+            }
         }
     }
 }
