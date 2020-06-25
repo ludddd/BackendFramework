@@ -1,6 +1,4 @@
-import com.google.protobuf.gradle.*
 import com.ludd.backend_framework.projectConfig
-import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 group = "com.ludd"
 version = "0.0.1"
@@ -12,9 +10,9 @@ subprojects {
 plugins {
 	id("org.springframework.boot") version "2.3.0.RELEASE" apply(false)
 	id("io.spring.dependency-management") version "1.0.9.RELEASE" apply(false)
-	kotlin("jvm") version "1.3.72" apply(false)
+	kotlin("jvm") //version "1.3.72" apply(false)
 	kotlin("plugin.spring") version "1.3.70" apply(false)
-	id("com.google.protobuf") version "0.8.12" apply(false)
+	id("com.google.protobuf") //version "0.8.12" apply(false)
 }
 
 val kotlin_version: String by project
@@ -31,37 +29,4 @@ subprojects {
 	}
 
 	projectConfig()
-
-	tasks.withType<KotlinCompile> {
-		kotlinOptions {
-			freeCompilerArgs = listOf("-Xjsr305=strict", "-Xuse-experimental=kotlin.Experimental")
-			jvmTarget = "11"
-		}
-	}
-
-	val generatedSrcPath = "$projectDir/gen"
-	protobuf {
-		generatedFilesBaseDir = generatedSrcPath
-		protoc {
-			artifact = "com.google.protobuf:protoc:3.12.2"
-		}
-		plugins {
-			// Specify protoc to generate using kotlin protobuf plugin
-			id("grpc") {
-				artifact = "io.grpc:protoc-gen-grpc-java:$grpc_version"
-			}
-		}
-		generateProtoTasks {
-			ofSourceSet("main").forEach {
-				it.plugins {
-					// Apply the "grpc" plugin whose spec is defined above, without options.
-					id("grpc")
-				}
-			}
-		}
-	}
-
-	tasks.withType<Delete> {
-		delete(generatedSrcPath)
-	}
 }
