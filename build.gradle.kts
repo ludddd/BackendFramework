@@ -15,11 +15,6 @@ plugins {
 	id("com.google.protobuf") //version "0.8.12" apply(false)
 }
 
-val kotlin_version: String by project
-val spring_boot_version: String by project
-val protobuf_version: String by project
-val grpc_version: String by project
-
 subprojects {
 	repositories {
 		mavenCentral()
