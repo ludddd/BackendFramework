@@ -20,12 +20,5 @@ plugins {
 }
 
 subprojects {
-	repositories {
-		mavenCentral()
-		mavenLocal()
-		jcenter()
-		maven { url = uri("https://kotlin.bintray.com/ktor") }
-	}
-
 	projectConfig()
 }

@@ -9,10 +9,14 @@ import org.gradle.api.tasks.testing.Test
 import org.gradle.kotlin.dsl.*
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
-/**
- * Configures the current project as a Kotlin project by adding the Kotlin `stdlib` as a dependency.
- */
 fun Project.projectConfig() {
+    repositories {
+        mavenCentral()
+        mavenLocal()
+        jcenter()
+        maven { url = uri("https://kotlin.bintray.com/ktor") }
+    }
+
     apply(plugin = "org.springframework.boot")
     apply(plugin = "io.spring.dependency-management")
     apply(plugin = "com.google.protobuf")
