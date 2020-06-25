@@ -1,4 +1,5 @@
 import com.google.protobuf.gradle.*
+import com.ludd.backend_framework.projectConfig
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 group = "com.ludd"
@@ -11,8 +12,8 @@ subprojects {
 plugins {
 	id("org.springframework.boot") version "2.3.0.RELEASE" apply(false)
 	id("io.spring.dependency-management") version "1.0.9.RELEASE" apply(false)
-	kotlin("jvm") //version "1.3.72" apply(false)
-	kotlin("plugin.spring") version "1.3.72" apply(false)
+	kotlin("jvm") version "1.3.72" apply(false)
+	kotlin("plugin.spring") version "1.3.70" apply(false)
 	id("com.google.protobuf") version "0.8.12" apply(false)
 }
 
@@ -29,7 +30,7 @@ subprojects {
 		maven { url = uri("https://kotlin.bintray.com/ktor") }
 	}
 
-	apply(plugin = "com.ludd.backend-framework")
+	projectConfig()
 
 	tasks.withType<KotlinCompile> {
 		kotlinOptions {
