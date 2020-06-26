@@ -1,5 +1,21 @@
+import com.ludd.backend_framework.projectConfig
+
 group = "com.ludd"
 version = "0.0.1"
+
+repositories {
+    mavenCentral()
+    maven { url = uri("https://kotlin.bintray.com/ktor") }
+}
+
+plugins {
+    `kotlin-dsl`
+    id("com.bmuschko.docker-java-application") version "6.4.0"
+    id("com.bmuschko.docker-remote-api") version "6.4.0"
+    idea
+}
+
+projectConfig()
 
 val ktor_version: String by project
 
@@ -11,11 +27,6 @@ dependencies {
 }
 
 idea.module {
-}
-
-plugins {
-    id("com.bmuschko.docker-java-application") version "6.4.0"
-    id("com.bmuschko.docker-remote-api") version "6.4.0"
 }
 
 docker {

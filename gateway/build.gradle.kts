@@ -1,3 +1,17 @@
+import com.ludd.backend_framework.projectConfig
+
+repositories {
+    mavenCentral()
+    maven { url = uri("https://kotlin.bintray.com/ktor") }
+}
+
+plugins {
+    `kotlin-dsl`
+    idea
+}
+
+projectConfig()
+
 val ktor_version: String by project
 val test_containers_version: String by project
 

@@ -1,5 +1,3 @@
-import com.ludd.backend_framework.projectConfig
-
 group = "com.ludd"
 version = "0.0.1"
 
@@ -17,8 +15,4 @@ plugins {
 	kotlin("jvm") //version "1.3.72" apply(false)
 	kotlin("plugin.spring") version "1.3.70" apply(false)
 	id("com.google.protobuf") //version "0.8.12" apply(false)
-}
-
-subprojects {
-	projectConfig()
 }
