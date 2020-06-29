@@ -13,6 +13,7 @@ plugins {
     id("com.bmuschko.docker-java-application") version "6.4.0"
     id("com.bmuschko.docker-remote-api") version "6.4.0"
     idea
+    kotlin("jvm")// version "1.3.70"
 }
 
 projectConfig()
