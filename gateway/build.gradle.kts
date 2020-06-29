@@ -6,8 +6,8 @@ repositories {
 }
 
 plugins {
-    `kotlin-dsl`
     idea
+    kotlin("jvm")
 }
 
 projectConfig()

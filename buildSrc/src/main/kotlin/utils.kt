@@ -88,4 +88,12 @@ fun Project.projectConfig() {
     tasks.withType<Delete> {
         delete(generatedSrcPath)
     }
+
+    //to fix problem with org.slf4j.impl.StaticLoggerBinder.class from gradle api leaking to modules and conflicting
+    //with logback engine
+    configurations {
+        "testCompile" {
+            exclude(group = "org.jetbrains.kotlin", module = "kotlin-gradle-plugin")
+        }
+    }
 }
