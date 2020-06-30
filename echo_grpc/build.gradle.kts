@@ -2,14 +2,18 @@ import com.bmuschko.gradle.docker.tasks.container.DockerCreateContainer
 import com.bmuschko.gradle.docker.tasks.container.DockerStartContainer
 import com.bmuschko.gradle.docker.tasks.container.DockerStopContainer
 import com.bmuschko.gradle.docker.tasks.image.Dockerfile
+import com.ludd.backend_framework.projectConfig
 
 plugins {
+    idea
     id("com.bmuschko.docker-java-application") version "6.4.0"
     id("com.bmuschko.docker-remote-api") version "6.4.0"
 }
 
+projectConfig()
+
 idea.module {
-    sourceDirs.add(file(protobuf.protobuf.generatedFilesBaseDir + "/main/grpc"))
+    //sourceDirs.add(file(protobuf.protobuf.generatedFilesBaseDir + "/main/grpc"))
 }
 
 docker {
@@ -54,5 +58,3 @@ val integrationTest = task<Test>("integrationTest") {
     dependsOn(startMyAppContainer)
     finalizedBy(stopMyAppContainer)
 }
-
-//tasks.check { dependsOn(integrationTest) }
