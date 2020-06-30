@@ -13,7 +13,10 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
 import mu.KotlinLogging
-import org.junit.jupiter.api.*
+import org.junit.jupiter.api.AfterEach
+import org.junit.jupiter.api.BeforeEach
+import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.Timeout
 import org.testcontainers.containers.GenericContainer
 import org.testcontainers.junit.jupiter.Testcontainers
 import java.nio.charset.Charset
@@ -27,7 +30,6 @@ private val logger = KotlinLogging.logger {}
 const val PORT = 9000
 
 @KtorExperimentalAPI
-@Tag("integration")
 @Testcontainers
 class EchoIntegrationTest {
 

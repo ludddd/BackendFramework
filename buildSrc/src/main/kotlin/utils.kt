@@ -5,8 +5,10 @@ import org.gradle.api.JavaVersion
 import org.gradle.api.Project
 import org.gradle.api.plugins.JavaPluginExtension
 import org.gradle.api.tasks.Delete
+import org.gradle.api.tasks.SourceSetContainer
 import org.gradle.api.tasks.testing.Test
 import org.gradle.kotlin.dsl.*
+import org.jetbrains.kotlin.gradle.plugin.KotlinSourceSet
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 fun Project.projectConfig() {
@@ -47,13 +49,6 @@ fun Project.projectConfig() {
     configure<JavaPluginExtension> {
         sourceCompatibility = JavaVersion.VERSION_11
         targetCompatibility = JavaVersion.VERSION_11
-    }
-
-    tasks.withType<Test> {
-        useJUnitPlatform() {
-            //TODO: use source set as recomended
-            excludeTags("integration")
-        }
     }
 
     tasks.withType<KotlinCompile> {
@@ -97,6 +92,25 @@ fun Project.projectConfig() {
         }
     }
 
+    val sourceSets = the<SourceSetContainer>()
 
+    sourceSets {
+        create("integrationTest") {
+            withConvention(KotlinSourceSet::class) {
+                kotlin.srcDir("src/integrationTest/kotlin")
+                resources.srcDir("src/integrationTest/resources")
+                compileClasspath += sourceSets["main"].output + configurations["testRuntimeClasspath"]
+                runtimeClasspath += output + compileClasspath + sourceSets["test"].runtimeClasspath
+            }
+        }
+    }
 
+    task<Test>("integrationTest") {
+        description = "Runs the integration tests"
+        group = "verification"
+        testClassesDirs = sourceSets["integrationTest"].output.classesDirs
+        classpath = sourceSets["integrationTest"].runtimeClasspath
+        shouldRunAfter(tasks["test"])
+        useJUnitPlatform()
+    }
 }

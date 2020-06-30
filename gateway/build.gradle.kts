@@ -27,16 +27,10 @@ dependencies {
 idea.module {
 }
 
-val integrationTest = task<Test>("integrationTest") {
-    description = "Runs integration tests."
-    group = "verification"
-
-    shouldRunAfter("test")
-
-    useJUnitPlatform() {
-        includeTags("integration")
+tasks {
+    named("integrationTest") {
+        dependsOn(":echo:dockerBuildImage")
     }
-
-    dependsOn(":echo:dockerBuildImage")
 }
+
 
