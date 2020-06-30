@@ -15,9 +15,8 @@ dependencies {
     "implementation"("com.google.protobuf:protobuf-java:3.12.2")
 }
 
-/*kotlinDslPluginOptions {
+kotlinDslPluginOptions {
     experimentalWarning.set(false)
-}*/
-
+}
 
 

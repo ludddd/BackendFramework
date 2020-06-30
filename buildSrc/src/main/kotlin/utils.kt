@@ -96,4 +96,7 @@ fun Project.projectConfig() {
             exclude(group = "org.jetbrains.kotlin", module = "kotlin-gradle-plugin")
         }
     }
+
+
+
 }
