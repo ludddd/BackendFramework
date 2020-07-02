@@ -3,7 +3,7 @@ package com.ludd.gateway
 import com.google.protobuf.ByteString
 
 interface IRpcService {
-    fun call(arg: ByteString): ByteString
+    suspend fun call(arg: ByteString): ByteString
 }
 
 interface IRpcServiceProvider {

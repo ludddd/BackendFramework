@@ -36,7 +36,7 @@ class GatewayServer(@Value("\${gateway.tcp_server.port}") port: Integer): Abstra
         }
     }
 
-    private fun callRpc(message: Message.RpcRequest): Message.RpcResponse {
+    private suspend fun callRpc(message: Message.RpcRequest): Message.RpcResponse {
         logger.info("message for service ${message.service} received")
         val service = serviceProvider.get(message.service)
         val result = service.call(message.arg)
