@@ -18,50 +18,48 @@ import kotlinx.coroutines.withContext
 @KtorExperimentalAPI
 class ProxyRpcService(private val serviceName:String,
                       private val host:String,
-                      private val port:Int): IRpcService {
-
-    //TODO: move connected state to class itself/class builder
+                      private val port:Int): IRpcService
+{
     //TODO: add reconnected
     //TODO: user connection pooling
     private val selectorManager = ActorSelectorManager(Dispatchers.IO)
-    private var socket: Socket? = null
-    private var write: ByteWriteChannel? = null
-    private var read: ByteReadChannel? = null
+    private var proxyConnection: ProxyConnection? = null
 
     override suspend fun call(arg: ByteString): ByteString {
         if (!isConnected()) {
             connect()
         }
 
+        return proxyConnection!!.call(arg)
+    }
+
+    private fun isConnected() = proxyConnection != null
+
+    private suspend fun connect() {
+        val socket = aSocket(selectorManager).tcp().connect(host, port)
+        proxyConnection = ProxyConnection(serviceName, socket)
+    }
+
+}
+
+class ProxyConnection(private val serviceName: String, private val socket: Socket) {
+
+    private val write: ByteWriteChannel = socket.openWriteChannel(autoFlush = true)
+    private val read: ByteReadChannel = socket.openReadChannel()
+
+    suspend fun call(arg: ByteString): ByteString {
         val message = Message.RpcRequest
             .newBuilder()
             .setService(serviceName)
             .setArg(arg)
             .build()
         withContext(Dispatchers.IO) {
-            message.writeDelimitedTo(outputStream())
+            message.writeDelimitedTo(write.toOutputStream())
         }
 
         val response = withContext(Dispatchers.IO) {
-            Message.RpcResponse.parseDelimitedFrom(inputStream())
+            Message.RpcResponse.parseDelimitedFrom(read.toInputStream())
         }
         return response.result
     }
-
-    private fun inputStream() = read?.toInputStream() ?:
-        throw Exception("trying to receive while not being connected to $serviceName")
-
-    private fun outputStream() = write?.toOutputStream() ?:
-        throw Exception("trying to send while not being connected to $serviceName")
-
-    private fun isConnected() = socket != null
-
-    private suspend fun connect() {
-        socket = aSocket(selectorManager).tcp().connect(host, port)
-        val currentSocket = socket ?: throw Exception("Failed to connect to service $serviceName")
-
-        write = currentSocket.openWriteChannel(autoFlush = true)
-        read = currentSocket.openReadChannel()
-    }
-
 }
