@@ -19,6 +19,13 @@ fun Project.projectConfig() {
     setupProtoBuf()
     excludeGradleApiFromBuild()
     setupIntegrationTests()
+    setJUnit5Tests()
+}
+
+private fun Project.setJUnit5Tests() {
+    tasks.named<Test>("test") {
+        useJUnitPlatform()
+    }
 }
 
 private fun Project.addRepositories() {
@@ -137,4 +144,5 @@ private fun Project.setupIntegrationTests() {
         shouldRunAfter(tasks["test"])
         useJUnitPlatform()
     }
+
 }
