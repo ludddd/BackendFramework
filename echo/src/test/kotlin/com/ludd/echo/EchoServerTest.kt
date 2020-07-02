@@ -1,6 +1,7 @@
 package com.ludd.echo
 
 import com.google.protobuf.ByteString
+import com.ludd.rpc.EchoServer
 import com.ludd.rpc.to.Message
 import io.ktor.network.selector.ActorSelectorManager
 import io.ktor.network.sockets.aSocket

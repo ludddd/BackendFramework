@@ -15,9 +15,9 @@ private val logger = KotlinLogging.logger {}
 
 @KtorExperimentalAPI
 @Component
-@ConditionalOnProperty(name = ["gateway.tcp_server.type"], havingValue = "echo")
 @Suppress("PLATFORM_CLASS_MAPPED_TO_KOTLIN")
-class TcpEchoServer(@Value("\${gateway.tcp_server.port}") port: Integer): AbstractTcpServer(port.toInt()) {
+@ConditionalOnProperty("gateway.echo_server.port")
+class TcpEchoServer(@Value("\${gateway.echo_server.port}") port: Integer): AbstractTcpServer(port.toInt()) {
 
     override suspend fun processMessages(read: ByteReadChannel, write: ByteWriteChannel) {
         val line = read.readUTF8Line()

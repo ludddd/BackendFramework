@@ -14,7 +14,7 @@ import org.springframework.test.annotation.DirtiesContext
 import kotlin.test.assertEquals
 
 @KtorExperimentalAPI
-@SpringBootTest(properties=["gateway.tcp_server.port=9000", "gateway.tcp_server.type=echo"])
+@SpringBootTest(properties=["gateway.echo_server.port=9001"])
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
 internal class TcpEchoServerTest {
 

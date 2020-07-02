@@ -1,6 +1,5 @@
-package com.ludd.echo
+package com.ludd.rpc
 
-import com.ludd.rpc.AbstractTcpServer
 import com.ludd.rpc.to.Message
 import io.ktor.util.KtorExperimentalAPI
 import io.ktor.utils.io.ByteReadChannel
@@ -11,6 +10,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import mu.KotlinLogging
 import org.springframework.beans.factory.annotation.Value
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty
 import org.springframework.stereotype.Component
 
 private val logger = KotlinLogging.logger {}
@@ -18,6 +18,7 @@ private val logger = KotlinLogging.logger {}
 @KtorExperimentalAPI
 @Component
 @Suppress("PLATFORM_CLASS_MAPPED_TO_KOTLIN")
+@ConditionalOnProperty("echo_server.port")
 class EchoServer(@Value("\${echo_server.port}") port: Integer): AbstractTcpServer(port.toInt()) {
     override suspend fun processMessages(read: ByteReadChannel, write: ByteWriteChannel) {
         val message = withContext(Dispatchers.IO) {

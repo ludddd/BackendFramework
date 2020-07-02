@@ -3,7 +3,7 @@ package com.ludd.gateway
 import org.springframework.boot.autoconfigure.SpringBootApplication
 import org.springframework.boot.runApplication
 
-@SpringBootApplication
+@SpringBootApplication(scanBasePackages = ["com.ludd.gateway", "com.ludd.rpc"])
 class GatewayApplication
 
 fun main(args: Array<String>) {

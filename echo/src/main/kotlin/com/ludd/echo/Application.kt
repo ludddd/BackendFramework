@@ -1,5 +1,6 @@
 package com.ludd.echo
 
+import com.ludd.rpc.EchoServer
 import io.ktor.util.KtorExperimentalAPI
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.ApplicationArguments
@@ -9,7 +10,7 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty
 import org.springframework.boot.runApplication
 import org.springframework.stereotype.Component
 
-@SpringBootApplication
+@SpringBootApplication(scanBasePackages = ["com.ludd.rpc", "com.ludd.echo"])
 class Application
 
 @KtorExperimentalAPI

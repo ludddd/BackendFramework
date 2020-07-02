@@ -32,7 +32,7 @@ abstract class AbstractTcpServer(private val port:Int): CoroutineScope {
     fun start() {
         serverJob = launch {
             val serverSocket = aSocket(selectorManager).tcp().bind(port = getPort())
-            logger.info("${javaClass.name} listening at ${serverSocket.localAddress}")
+            logger.info("${this@AbstractTcpServer.javaClass.name} listening at ${serverSocket.localAddress}")
             serverSocket.use {
                 while (isActive) {
                     val socket = serverSocket.accept()
@@ -40,7 +40,7 @@ abstract class AbstractTcpServer(private val port:Int): CoroutineScope {
                     startSession(socket)
                 }
             }
-            logger.info("${javaClass.name} stop listening at ${serverSocket.localAddress}")
+            logger.info("${this@AbstractTcpServer.javaClass.name} stop listening at ${serverSocket.localAddress}")
         }
     }
 

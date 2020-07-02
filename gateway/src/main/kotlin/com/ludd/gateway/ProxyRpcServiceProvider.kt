@@ -9,7 +9,7 @@ import org.springframework.stereotype.Service
 @ConditionalOnProperty("gateway.service_provider", havingValue = "proxy")
 class ProxyRpcServiceProvider: IRpcServiceProvider {
 
-    private val echoProxy = ProxyRpcService("echo", "localhost", 9001)
+    private val echoProxy = ProxyRpcService("echo", "0:0:0:0:0:0:0:0", 9001)
 
     override fun get(service: String): IRpcService {
         return echoProxy
