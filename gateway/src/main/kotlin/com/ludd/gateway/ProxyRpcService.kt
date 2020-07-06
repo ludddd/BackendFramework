@@ -20,7 +20,6 @@ class ProxyRpcService(private val serviceName:String,
                       private val host:String,
                       private val port:Int): IRpcService
 {
-    //TODO: add reconnected
     //TODO: user connection pooling
     private val selectorManager = ActorSelectorManager(Dispatchers.IO)
     private var proxyConnection: ProxyConnection? = null
