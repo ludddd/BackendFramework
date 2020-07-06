@@ -8,6 +8,8 @@ repositories {
 plugins {
     idea
     kotlin("jvm")
+    id("com.bmuschko.docker-java-application") version "6.4.0"
+    id("com.bmuschko.docker-remote-api") version "6.4.0"
 }
 
 projectConfig()
@@ -30,6 +32,16 @@ idea.module {
 tasks {
     named("integrationTest") {
         dependsOn(":echo:dockerBuildImage")
+    }
+}
+
+docker {
+    javaApplication {
+        baseImage.set("openjdk:13")
+        maintainer.set("Anatoly Ahmedov 'ludd@bk.ru'")
+        ports.set(listOf(9000, 9000))
+        images.set(setOf("ludd.gateway:0.1", "ludd.gateway:latest"))
+        jvmArgs.set(listOf("-Xms256m", "-Xmx2048m"))
     }
 }
 
