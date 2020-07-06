@@ -8,6 +8,8 @@ import io.ktor.network.sockets.aSocket
 import io.ktor.network.sockets.openReadChannel
 import io.ktor.network.sockets.openWriteChannel
 import io.ktor.util.KtorExperimentalAPI
+import io.ktor.utils.io.ByteReadChannel
+import io.ktor.utils.io.ByteWriteChannel
 import io.ktor.utils.io.jvm.javaio.toInputStream
 import io.ktor.utils.io.jvm.javaio.toOutputStream
 import kotlinx.coroutines.Dispatchers
@@ -47,6 +49,14 @@ internal class GatewayServerTest {
             val write = socket.openWriteChannel(autoFlush = true)
             val read = socket.openReadChannel()
 
+            return sendEchoMessage(text, write, read)
+        }
+
+        suspend fun sendEchoMessage(
+            text: String,
+            write: ByteWriteChannel,
+            read: ByteReadChannel
+        ): Message.RpcResponse? {
             val message = Message.RpcRequest
                 .newBuilder()
                 .setService("echo")
