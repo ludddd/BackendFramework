@@ -14,6 +14,8 @@ import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty
 import org.springframework.stereotype.Component
+import javax.annotation.PostConstruct
+import javax.annotation.PreDestroy
 
 private val logger = KotlinLogging.logger {}
 
@@ -21,7 +23,8 @@ private val logger = KotlinLogging.logger {}
 @Component
 @ConditionalOnProperty(name = ["gateway.tcp_server.type"], havingValue = "gateway")
 @Suppress("PLATFORM_CLASS_MAPPED_TO_KOTLIN")
-class GatewayServer(@Value("\${gateway.tcp_server.port}") port: Integer): AbstractTcpServer(port.toInt()) {
+class GatewayServer(@Value("\${gateway.tcp_server.port}") port: Integer):
+    AbstractTcpServer(port.toInt()) {
 
     @Autowired
     private lateinit var serviceProvider: IRpcServiceProvider
@@ -41,6 +44,16 @@ class GatewayServer(@Value("\${gateway.tcp_server.port}") port: Integer): Abstra
         val service = serviceProvider.get(message.service)
         val result = service.call(message.arg)
         return Message.RpcResponse.newBuilder().setResult(result).build()
+    }
+
+    @PostConstruct
+    fun onPostConstruct() {
+        start()
+    }
+
+    @PreDestroy
+    fun onPreDestroy() {
+        super.stop()
     }
 }
 

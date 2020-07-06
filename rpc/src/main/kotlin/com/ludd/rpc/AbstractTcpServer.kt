@@ -11,8 +11,6 @@ import io.ktor.utils.io.ByteWriteChannel
 import kotlinx.coroutines.*
 import mu.KotlinLogging
 import java.util.concurrent.atomic.AtomicInteger
-import javax.annotation.PostConstruct
-import javax.annotation.PreDestroy
 import kotlin.coroutines.CoroutineContext
 
 private val logger = KotlinLogging.logger {}
@@ -28,7 +26,6 @@ abstract class AbstractTcpServer(private val port:Int): CoroutineScope {
     fun getPort() = port
     private val sessionCount = AtomicInteger(0)
 
-    @PostConstruct
     fun start() {
         serverJob = launch {
             val serverSocket = aSocket(selectorManager).tcp().bind(port = getPort())
@@ -63,7 +60,6 @@ abstract class AbstractTcpServer(private val port:Int): CoroutineScope {
 
     abstract suspend fun processMessages(read: ByteReadChannel, write: ByteWriteChannel)
 
-    @PreDestroy
     fun stop() = runBlocking{
         logger.info("Stopping server...")
         job.cancelChildren()

@@ -10,6 +10,8 @@ import mu.KotlinLogging
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty
 import org.springframework.stereotype.Component
+import javax.annotation.PostConstruct
+import javax.annotation.PreDestroy
 
 private val logger = KotlinLogging.logger {}
 
@@ -24,5 +26,15 @@ class TcpEchoServer(@Value("\${gateway.echo_server.port}") port: Integer): Abstr
         logger.debug("received: $line")
         write.writeStringUtf8("$line\n")
         logger.debug("send: $line")
+    }
+
+    @PostConstruct
+    fun onPostConstruct() {
+        start()
+    }
+
+    @PreDestroy
+    fun onPreDestroy() {
+        super.stop()
     }
 }

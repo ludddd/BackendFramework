@@ -12,6 +12,8 @@ import mu.KotlinLogging
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty
 import org.springframework.stereotype.Component
+import javax.annotation.PostConstruct
+import javax.annotation.PreDestroy
 
 private val logger = KotlinLogging.logger {}
 
@@ -19,13 +21,40 @@ private val logger = KotlinLogging.logger {}
 @Component
 @Suppress("PLATFORM_CLASS_MAPPED_TO_KOTLIN")
 @ConditionalOnProperty("echo_server.port")
-class EchoServer(@Value("\${echo_server.port}") port: Integer): AbstractTcpServer(port.toInt()) {
+class EchoServer(@Value("\${echo_server.port}") val port: Integer) {
+
+    private var impl: EchoServerImpl? = null
+
+    @PostConstruct
+    fun start() {
+        require(impl == null) {"server is running already"}
+        impl = EchoServerImpl(port.toInt())
+        impl?.start()
+    }
+
+    @PreDestroy
+    fun stop() {
+        require(impl != null) {"server is stopped already"}
+        impl?.stop()
+        impl = null
+    }
+
+    fun waitTillTermination() {
+        impl?.waitTillTermination()
+    }
+
+    fun getPort(): Int = port.toInt()
+}
+
+@KtorExperimentalAPI
+class EchoServerImpl(port: Int): AbstractTcpServer(port) {
+
     override suspend fun processMessages(read: ByteReadChannel, write: ByteWriteChannel) {
         val message = withContext(Dispatchers.IO) {
             Message.RpcRequest.parseDelimitedFrom(read.toInputStream(job))
         }
         if (message == null) {
-            logger.warn("Failed to read incomming message")
+            logger.warn("Failed to read incoming message")
             return
         }
         val response = Message.RpcResponse.newBuilder().setResult(message.arg).build()
