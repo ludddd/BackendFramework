@@ -25,7 +25,6 @@ import kotlin.test.assertNotNull
 
 @KtorExperimentalAPI
 @SpringBootTest(properties=["gateway.tcp_server.port=9000",
-    "gateway.tcp_server.type=gateway",
     "gateway.service_provider=local",
     "gateway.echo_server.port=9001"])
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)

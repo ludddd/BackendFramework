@@ -21,7 +21,7 @@ private val logger = KotlinLogging.logger {}
 
 @KtorExperimentalAPI
 @Component
-@ConditionalOnProperty(name = ["gateway.tcp_server.type"], havingValue = "gateway")
+@ConditionalOnProperty(name = ["gateway.tcp_server.port"])
 @Suppress("PLATFORM_CLASS_MAPPED_TO_KOTLIN")
 class GatewayServer(@Value("\${gateway.tcp_server.port}") port: Integer):
     AbstractTcpServer(port.toInt()) {

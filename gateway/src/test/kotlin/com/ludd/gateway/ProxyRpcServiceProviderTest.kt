@@ -20,7 +20,6 @@ import java.util.concurrent.TimeUnit
 @KtorExperimentalAPI
 @SpringBootTest(properties=[
     "gateway.tcp_server.port=9000",
-    "gateway.tcp_server.type=gateway",
     "gateway.service_provider=proxy",
     "echo_server.port=9001"])
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
