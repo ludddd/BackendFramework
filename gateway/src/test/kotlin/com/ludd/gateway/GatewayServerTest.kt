@@ -28,7 +28,7 @@ import kotlin.test.assertNotNull
     "gateway.service_provider=local",
     "gateway.echo_server.port=9001"])
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
-internal class GatewayServerTest {
+class GatewayServerTest {
     @Autowired
     private lateinit var tcpServer: GatewayServer
     @Autowired
