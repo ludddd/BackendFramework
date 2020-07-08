@@ -27,7 +27,7 @@ class KGenericContainer(imageName: String) : GenericContainer<KGenericContainer>
 
 private val logger = KotlinLogging.logger {}
 
-const val PORT = 9000
+const val PORT = 9001
 
 @KtorExperimentalAPI
 @Testcontainers
