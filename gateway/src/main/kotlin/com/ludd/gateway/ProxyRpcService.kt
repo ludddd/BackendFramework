@@ -41,6 +41,9 @@ class ProxyRpcService(private val serviceName:String,
 
 }
 
+//TODO: should have pool of connection to each service
+//to allow multiple calls from different users at once
+//but no more than connection pool size
 class ProxyConnection(private val serviceName: String, private val socket: Socket) {
 
     private val write: ByteWriteChannel = socket.openWriteChannel(autoFlush = true)
