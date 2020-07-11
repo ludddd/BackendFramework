@@ -34,7 +34,9 @@ abstract class AbstractTcpServer(private val port:Int): CoroutineScope {
                 while (isActive) {
                     val socket = serverSocket.accept()
                     logger.info("Accepted $socket")
-                    startSession(socket)
+                    supervisorScope {
+                        startSession(socket)
+                    }
                 }
             }
             logger.info("${this@AbstractTcpServer.javaClass.name} stop listening at ${serverSocket.localAddress}")
@@ -50,7 +52,14 @@ abstract class AbstractTcpServer(private val port:Int): CoroutineScope {
                 val read = socket.openReadChannel()
                 val write = socket.openWriteChannel(autoFlush = true)
                 while (isActive) {
-                    processMessages(read, write)
+                    try {
+                        processMessages(read, write)
+                    } catch (e: Exception) {
+                        if (!read.isClosedForRead && !write.isClosedForWrite) {
+                            logger.error(e) { "Error while processing messages" }
+                        }
+                        break
+                    }
                 }
             }
             logger.info("End session with $remoteAddress")

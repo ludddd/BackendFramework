@@ -8,6 +8,7 @@ import io.ktor.utils.io.ByteWriteChannel
 import io.ktor.utils.io.jvm.javaio.toInputStream
 import io.ktor.utils.io.jvm.javaio.toOutputStream
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.withContext
 import mu.KotlinLogging
 import org.springframework.beans.factory.annotation.Autowired
@@ -31,11 +32,11 @@ class GatewayServer(@Value("\${gateway.tcp_server.port}") port: Integer):
 
     override suspend fun processMessages(read: ByteReadChannel, write: ByteWriteChannel) {
         val message = withContext(Dispatchers.IO) {
-            Message.RpcRequest.parseDelimitedFrom(read.toInputStream(job))
+            Message.RpcRequest.parseDelimitedFrom(read.toInputStream(coroutineContext[Job]))
         }
         val response = callRpc(message)
         withContext(Dispatchers.IO) {
-            response.writeDelimitedTo(write.toOutputStream(job))
+            response.writeDelimitedTo(write.toOutputStream(coroutineContext[Job]))
         }
     }
 
