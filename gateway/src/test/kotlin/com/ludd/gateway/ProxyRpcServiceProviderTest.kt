@@ -21,7 +21,8 @@ import java.util.concurrent.TimeUnit
 @SpringBootTest(properties=[
     "gateway.tcp_server.port=9000",
     "gateway.service_provider=proxy",
-    "echo_server.port=9001"])
+    "echo_server.port=9001",
+    "echo_server.host=localhost"])
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
 internal class ProxyRpcServiceProviderTest {
     @Autowired
