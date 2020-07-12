@@ -1,20 +1,11 @@
 package com.ludd.gateway
 
-import com.google.protobuf.ByteString
-import com.ludd.rpc.to.Message
+import com.ludd.gateway.util.sendEchoMessage
 import io.ktor.network.selector.ActorSelectorManager
-import io.ktor.network.sockets.Socket
 import io.ktor.network.sockets.aSocket
-import io.ktor.network.sockets.openReadChannel
-import io.ktor.network.sockets.openWriteChannel
 import io.ktor.util.KtorExperimentalAPI
-import io.ktor.utils.io.ByteReadChannel
-import io.ktor.utils.io.ByteWriteChannel
-import io.ktor.utils.io.jvm.javaio.toInputStream
-import io.ktor.utils.io.jvm.javaio.toOutputStream
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
-import kotlinx.coroutines.withContext
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
@@ -41,33 +32,5 @@ class GatewayServerTest {
         val response = sendEchoMessage(socket, "aaa")
         assertNotNull(response)
         assertEquals("aaa", response.result.toString(Charset.defaultCharset()))
-    }
-
-    companion object {
-        suspend fun sendEchoMessage(socket: Socket, text: String): Message.RpcResponse? {
-            val write = socket.openWriteChannel(autoFlush = true)
-            val read = socket.openReadChannel()
-
-            return sendEchoMessage(text, write, read)
-        }
-
-        suspend fun sendEchoMessage(
-            text: String,
-            write: ByteWriteChannel,
-            read: ByteReadChannel
-        ): Message.RpcResponse? {
-            val message = Message.RpcRequest
-                .newBuilder()
-                .setService("echo")
-                .setArg(ByteString.copyFrom(text, Charset.defaultCharset()))
-                .build()
-            withContext(Dispatchers.IO) {
-                message.writeDelimitedTo(write.toOutputStream())
-            }
-
-            return withContext(Dispatchers.IO) {
-                Message.RpcResponse.parseDelimitedFrom(read.toInputStream())
-            }
-        }
     }
 }

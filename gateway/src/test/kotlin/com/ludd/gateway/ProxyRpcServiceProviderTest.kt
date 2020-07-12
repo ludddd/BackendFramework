@@ -1,5 +1,6 @@
 package com.ludd.gateway
 
+import com.ludd.gateway.util.sendEchoMessage
 import com.ludd.rpc.EchoServer
 import io.ktor.network.selector.ActorSelectorManager
 import io.ktor.network.sockets.aSocket
@@ -36,7 +37,7 @@ internal class ProxyRpcServiceProviderTest {
         val selectorManager = ActorSelectorManager(Dispatchers.IO)
         val socket =  aSocket(selectorManager).tcp().connect("127.0.0.1", port = tcpServer.getPort())
 
-        val response = GatewayServerTest.sendEchoMessage(socket, "aaa")
+        val response = sendEchoMessage(socket, "aaa")
         kotlin.test.assertNotNull(response)
         kotlin.test.assertEquals("aaa", response.result.toString(Charset.defaultCharset()))
     }
@@ -50,14 +51,14 @@ internal class ProxyRpcServiceProviderTest {
         val read = socket.openReadChannel()
         val text = "aaa"
 
-        GatewayServerTest.sendEchoMessage(text, write, read)
+        sendEchoMessage(text, write, read)
 
         echoServer.stop()
         echoServer.waitTillTermination()
         echoServer.start()
         delay(1000)
 
-        val response = GatewayServerTest.sendEchoMessage(text, write, read)
+        val response = sendEchoMessage(text, write, read)
 
         kotlin.test.assertNotNull(response)
         kotlin.test.assertEquals("aaa", response.result.toString(Charset.defaultCharset()))

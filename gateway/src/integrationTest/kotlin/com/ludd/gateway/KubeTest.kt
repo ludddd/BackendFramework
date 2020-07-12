@@ -1,5 +1,6 @@
 package com.ludd.gateway
 
+import com.ludd.gateway.util.sendEchoMessage
 import io.ktor.network.selector.ActorSelectorManager
 import io.ktor.network.sockets.aSocket
 import io.ktor.util.KtorExperimentalAPI
@@ -19,7 +20,7 @@ class KubeTest {
         val selectorManager = ActorSelectorManager(Dispatchers.IO)
         val socket =  aSocket(selectorManager).tcp().connect("localhost", port = 30000)
 
-        val response = GatewayServerTest.sendEchoMessage(socket, "aaa")
+        val response = sendEchoMessage(socket, "aaa")
         kotlin.test.assertNotNull(response)
         kotlin.test.assertEquals("aaa", response.result.toString(Charset.defaultCharset()))
     }
