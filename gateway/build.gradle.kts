@@ -24,7 +24,7 @@ dependencies {
     implementation(project(":rpc"))
     testImplementation("org.testcontainers:testcontainers:$test_containers_version")
     testImplementation("org.testcontainers:junit-jupiter:$test_containers_version")
-    testImplementation("io.kubernetes:client-java:8.0.2")
+    implementation("io.kubernetes:client-java:8.0.2")
 }
 
 idea.module {
@@ -43,7 +43,7 @@ docker {
         maintainer.set("Anatoly Ahmedov 'ludd@bk.ru'")
         ports.set(listOf(9000, 9000))
         images.set(setOf("ludd.gateway:0.1", "ludd.gateway:latest"))
-        jvmArgs.set(listOf("-Xms256m", "-Xmx2048m"))
+        jvmArgs.set(listOf("-Xms256m", "-Xmx2048m", "-Djdk.tls.client.protocols=TLSv1.2"))
     }
 }
 
