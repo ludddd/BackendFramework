@@ -24,6 +24,7 @@ dependencies {
     implementation(project(":rpc"))
     testImplementation("org.testcontainers:testcontainers:$test_containers_version")
     testImplementation("org.testcontainers:junit-jupiter:$test_containers_version")
+    testImplementation("io.kubernetes:client-java:8.0.2")
 }
 
 idea.module {
@@ -32,6 +33,7 @@ idea.module {
 tasks {
     named("integrationTest") {
         dependsOn(":echo:dockerBuildImage")
+        dependsOn("startKubernates")
     }
 }
 
@@ -44,5 +46,22 @@ docker {
         jvmArgs.set(listOf("-Xms256m", "-Xmx2048m"))
     }
 }
+
+val startKubernates = tasks.create<Exec>("startKubernates") {
+    executable = "kubectl"
+    args("apply", "-f", "../kubernates")
+    group="kubernates"
+    dependsOn(":echo:dockerBuildImage")
+    dependsOn("dockerBuildImage")
+}
+
+val stopKubernates = tasks.create<Exec>("stopKubernates") {
+    executable = "kubectl"
+    args("delete", "all", "--all")
+    group="kubernates"
+    shouldRunAfter("integrationTest")
+}
+
+
 
 

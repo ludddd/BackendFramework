@@ -6,10 +6,13 @@ import io.ktor.network.sockets.aSocket
 import io.ktor.util.KtorExperimentalAPI
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
+import mu.KotlinLogging
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.Timeout
 import java.nio.charset.Charset
 import java.util.concurrent.TimeUnit
+
+private val logger = KotlinLogging.logger {}
 
 @KtorExperimentalAPI
 class KubeTest {
