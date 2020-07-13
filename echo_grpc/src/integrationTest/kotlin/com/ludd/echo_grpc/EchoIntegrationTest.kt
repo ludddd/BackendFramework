@@ -4,10 +4,8 @@ import com.ludd.echo.to.Echo
 import com.ludd.echo.to.EchoServiceGrpc
 import io.grpc.ManagedChannelBuilder
 import org.junit.jupiter.api.Assertions
-import org.junit.jupiter.api.Tag
 import org.junit.jupiter.api.Test
 
-@Tag("integration")
 class EchoIntegrationTest {
 
     @Test

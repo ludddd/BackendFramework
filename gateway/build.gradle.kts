@@ -8,6 +8,8 @@ repositories {
 plugins {
     idea
     kotlin("jvm")
+    id("com.bmuschko.docker-java-application") version "6.4.0"
+    id("com.bmuschko.docker-remote-api") version "6.4.0"
 }
 
 projectConfig()
@@ -22,21 +24,44 @@ dependencies {
     implementation(project(":rpc"))
     testImplementation("org.testcontainers:testcontainers:$test_containers_version")
     testImplementation("org.testcontainers:junit-jupiter:$test_containers_version")
+    testImplementation("io.kubernetes:client-java:8.0.2")
 }
 
 idea.module {
 }
 
-val integrationTest = task<Test>("integrationTest") {
-    description = "Runs integration tests."
-    group = "verification"
-
-    shouldRunAfter("test")
-
-    useJUnitPlatform() {
-        includeTags("integration")
+tasks {
+    named("integrationTest") {
+        dependsOn(":echo:dockerBuildImage")
+        dependsOn("startKubernates")
     }
-
-    dependsOn(":echo:dockerBuildImage")
 }
+
+docker {
+    javaApplication {
+        baseImage.set("openjdk:13")
+        maintainer.set("Anatoly Ahmedov 'ludd@bk.ru'")
+        ports.set(listOf(9000, 9000))
+        images.set(setOf("ludd.gateway:0.1", "ludd.gateway:latest"))
+        jvmArgs.set(listOf("-Xms256m", "-Xmx2048m"))
+    }
+}
+
+val startKubernates = tasks.create<Exec>("startKubernates") {
+    executable = "kubectl"
+    args("apply", "-f", "../kubernates")
+    group="kubernates"
+    dependsOn(":echo:dockerBuildImage")
+    dependsOn("dockerBuildImage")
+}
+
+val stopKubernates = tasks.create<Exec>("stopKubernates") {
+    executable = "kubectl"
+    args("delete", "all", "--all")  //TODO: delete not everything, but only those created in startKubernates
+    group="kubernates"
+    shouldRunAfter("integrationTest")
+}
+
+
+
 

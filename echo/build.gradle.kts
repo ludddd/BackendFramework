@@ -33,7 +33,7 @@ docker {
     javaApplication {
         baseImage.set("openjdk:13")
         maintainer.set("Anatoly Ahmedov 'ludd@bk.ru'")
-        ports.set(listOf(9000, 9000))
+        ports.set(listOf(9001, 9001))
         images.set(setOf("ludd.echo:0.1", "ludd.echo:latest"))
         jvmArgs.set(listOf("-Xms256m", "-Xmx2048m"))
     }

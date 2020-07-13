@@ -11,8 +11,6 @@ import io.ktor.utils.io.ByteWriteChannel
 import kotlinx.coroutines.*
 import mu.KotlinLogging
 import java.util.concurrent.atomic.AtomicInteger
-import javax.annotation.PostConstruct
-import javax.annotation.PreDestroy
 import kotlin.coroutines.CoroutineContext
 
 private val logger = KotlinLogging.logger {}
@@ -28,19 +26,20 @@ abstract class AbstractTcpServer(private val port:Int): CoroutineScope {
     fun getPort() = port
     private val sessionCount = AtomicInteger(0)
 
-    @PostConstruct
     fun start() {
         serverJob = launch {
             val serverSocket = aSocket(selectorManager).tcp().bind(port = getPort())
-            logger.info("${javaClass.name} listening at ${serverSocket.localAddress}")
+            logger.info("${this@AbstractTcpServer.javaClass.name} listening at ${serverSocket.localAddress}")
             serverSocket.use {
                 while (isActive) {
                     val socket = serverSocket.accept()
                     logger.info("Accepted $socket")
-                    startSession(socket)
+                    supervisorScope {
+                        startSession(socket)
+                    }
                 }
             }
-            logger.info("${javaClass.name} stop listening at ${serverSocket.localAddress}")
+            logger.info("${this@AbstractTcpServer.javaClass.name} stop listening at ${serverSocket.localAddress}")
         }
     }
 
@@ -53,7 +52,14 @@ abstract class AbstractTcpServer(private val port:Int): CoroutineScope {
                 val read = socket.openReadChannel()
                 val write = socket.openWriteChannel(autoFlush = true)
                 while (isActive) {
-                    processMessages(read, write)
+                    try {
+                        processMessages(read, write)
+                    } catch (e: Exception) {
+                        if (!read.isClosedForRead && !write.isClosedForWrite) {
+                            logger.error(e) { "Error while processing messages" }
+                        }
+                        break
+                    }
                 }
             }
             logger.info("End session with $remoteAddress")
@@ -63,7 +69,6 @@ abstract class AbstractTcpServer(private val port:Int): CoroutineScope {
 
     abstract suspend fun processMessages(read: ByteReadChannel, write: ByteWriteChannel)
 
-    @PreDestroy
     fun stop() = runBlocking{
         logger.info("Stopping server...")
         job.cancelChildren()

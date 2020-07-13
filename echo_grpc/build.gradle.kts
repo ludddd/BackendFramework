@@ -45,16 +45,9 @@ val stopMyAppContainer by tasks.creating(DockerStopContainer::class) {
     targetContainerId(createMyAppContainer.containerId)
 }
 
-val integrationTest = task<Test>("integrationTest") {
-    description = "Runs integration tests."
-    group = "verification"
-
-    shouldRunAfter("test")
-
-    useJUnitPlatform() {
-        includeTags("integration")
+tasks {
+    named("integrationTest") {
+        dependsOn(startMyAppContainer)
+        finalizedBy(stopMyAppContainer)
     }
-
-    dependsOn(startMyAppContainer)
-    finalizedBy(stopMyAppContainer)
 }
