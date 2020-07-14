@@ -10,6 +10,8 @@ import io.ktor.util.KtorExperimentalAPI
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
+import org.hamcrest.MatcherAssert.assertThat
+import org.hamcrest.Matchers
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.Timeout
 import org.springframework.beans.factory.annotation.Autowired
@@ -22,6 +24,7 @@ import java.util.concurrent.TimeUnit
 @SpringBootTest(properties=[
     "gateway.tcp_server.port=9000",
     "gateway.service_provider=proxy",
+    "gateway.services=echo:localhost:9001",
     "echo_server.port=9001",
     "echo_server.host=localhost"])
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
@@ -31,6 +34,9 @@ internal class ProxyRpcServiceProviderTest {
 
     @Autowired
     private lateinit var tcpServer: GatewayServer
+
+    @Autowired
+    private lateinit var proxyRpcServiceProvider: ProxyRpcServiceProvider
 
     @Test
     fun echo() = runBlocking{
@@ -62,5 +68,10 @@ internal class ProxyRpcServiceProviderTest {
 
         kotlin.test.assertNotNull(response)
         kotlin.test.assertEquals("aaa", response.result.toString(Charset.defaultCharset()))
+    }
+
+    @Test
+    fun servicesFromProperties() {
+        assertThat(proxyRpcServiceProvider.servicesList(), Matchers.hasItem("echo:localhost:9001"))
     }
 }
