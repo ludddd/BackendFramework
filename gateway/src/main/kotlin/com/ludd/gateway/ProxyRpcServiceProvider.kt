@@ -37,8 +37,7 @@ class ProxyRpcServiceProvider(
 
     private fun servicesFromProperties(): List<ServiceProxy> {
         return servicesInProperties.map {
-            val items = it.split(":")
-            ServiceProxy(items[0], items[1], items[2].toInt())
+            ServiceProxy.parse(it)
         }
     }
 
@@ -74,8 +73,20 @@ class ProxyRpcServiceProvider(
 
     class ServiceProxy(val name: String, val host: String, val port: Int) {
         val proxy: ProxyRpcService by lazy { ProxyRpcService(name, host, port) }
+
+        companion object {
+            fun parse(str: String): ServiceProxy {
+                val items = str.split(":")
+                if (items.size != 3 || items[2].toIntOrNull() == null) {
+                    throw WrongServiceStringFormatException(str)
+                }
+                return ServiceProxy(items[0], items[1], items[2].toInt())
+            }
+        }
     }
 
     fun servicesList() = services.map { "${it.name}:${it.host}:${it.port}" }
 }
+
+class WrongServiceStringFormatException(value: String): java.lang.Exception("Wrong service string format: $value. Expecting: 'name:host:port'")
 

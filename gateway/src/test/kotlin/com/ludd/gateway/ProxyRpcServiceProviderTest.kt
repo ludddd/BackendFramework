@@ -12,6 +12,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
 import org.hamcrest.MatcherAssert.assertThat
 import org.hamcrest.Matchers
+import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.Timeout
 import org.springframework.beans.factory.annotation.Autowired
@@ -19,6 +20,7 @@ import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.test.annotation.DirtiesContext
 import java.nio.charset.Charset
 import java.util.concurrent.TimeUnit
+import kotlin.test.assertEquals
 
 @KtorExperimentalAPI
 @SpringBootTest(properties=[
@@ -45,7 +47,7 @@ internal class ProxyRpcServiceProviderTest {
 
         val response = sendEchoMessage(socket, "aaa")
         kotlin.test.assertNotNull(response)
-        kotlin.test.assertEquals("aaa", response.result.toString(Charset.defaultCharset()))
+        assertEquals("aaa", response.result.toString(Charset.defaultCharset()))
     }
 
     @Test
@@ -67,11 +69,23 @@ internal class ProxyRpcServiceProviderTest {
         val response = sendEchoMessage(text, write, read)
 
         kotlin.test.assertNotNull(response)
-        kotlin.test.assertEquals("aaa", response.result.toString(Charset.defaultCharset()))
+        assertEquals("aaa", response.result.toString(Charset.defaultCharset()))
     }
 
     @Test
     fun servicesFromProperties() {
         assertThat(proxyRpcServiceProvider.servicesList(), Matchers.hasItem("echo:localhost:9001"))
+    }
+
+    @Test
+    fun parseServiceString() {
+        Assertions.assertThrows(WrongServiceStringFormatException::class.java) {ProxyRpcServiceProvider.ServiceProxy.parse("aaa")}
+        Assertions.assertThrows(WrongServiceStringFormatException::class.java) {ProxyRpcServiceProvider.ServiceProxy.parse("a:b:c:d")}
+        Assertions.assertThrows(WrongServiceStringFormatException::class.java) {ProxyRpcServiceProvider.ServiceProxy.parse("a:b:c")}
+        val parsed = ProxyRpcServiceProvider.ServiceProxy.parse("aaa:bbb:10")
+        assertEquals("aaa", parsed.name)
+        assertEquals("bbb", parsed.host)
+        assertEquals(10, parsed.port)
+
     }
 }
