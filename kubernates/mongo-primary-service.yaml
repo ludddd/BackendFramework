@@ -1,0 +1,11 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: mongo-primary
+spec:
+  selector:
+    app: mongo-primary
+  ports:
+    - protocol: TCP
+      port: 27017
+      targetPort: 27017

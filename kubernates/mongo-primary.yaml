@@ -1,0 +1,21 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mongo-primary
+spec:
+  selector:
+    matchLabels:
+      app: mongo-primary
+  minReadySeconds: 5
+  template:
+    metadata:
+      labels:
+        app: mongo-primary
+    spec:
+      containers:
+        - name: mongo-primary
+          image: mongo-replica-set:4.4
+          ports:
+            - containerPort: 27017
+          #command: ["mongo"]
+          #args: ["--eval", "rs.initiate({_id: \"rs0\", members:[{_id:0, host:\"mongo-primary:27017\", priority:1.0}, {_id:1, host:\"mongo-secondary:27017\", priority: 0.5 }, {_id: 2, host:\"mongo-arbiter:27017\", priority: 0.1 }]})"]
