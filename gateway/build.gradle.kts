@@ -62,6 +62,20 @@ val stopKubernates = tasks.create<Exec>("stopKubernates") {
     shouldRunAfter("integrationTest")
 }
 
+tasks.create<Exec>("deletePVC") {
+    executable = "kubectl"
+    args("delete", "pvc", "mongo-mongo-0")
+    group="kubernates"
+    mustRunAfter("stopKubernates")
+}
+
+tasks.create<Exec>("deletePV") {
+    executable = "kubectl"
+    args("delete", "pv", "mongo-local-pv")
+    group="kubernates"
+    mustRunAfter("deletePVC")
+}
+
 
 
 
