@@ -1,5 +1,5 @@
 #!/bin/bash
-until mongo --eval "print(\"waited for connection\")"
+until mongo mongo-0.mongo --eval "print(\"waited for connection\")"
   do
     echo 'waiting...'
     sleep 1
