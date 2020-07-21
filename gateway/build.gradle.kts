@@ -59,7 +59,7 @@ val stopKubernates = tasks.create<Exec>("stopKubernates") {
     executable = "kubectl"
     args("delete", "all", "--all")  //TODO: delete not everything, but only those created in startKubernates
     group="kubernates"
-    shouldRunAfter("integrationTest")
+    mustRunAfter("integrationTest")
 }
 
 
