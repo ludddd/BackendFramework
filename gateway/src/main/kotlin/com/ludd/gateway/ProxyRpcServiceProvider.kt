@@ -1,5 +1,7 @@
 package com.ludd.gateway
 
+import com.ludd.rpc.IRpcService
+import com.ludd.rpc.IRpcServiceProvider
 import io.ktor.util.KtorExperimentalAPI
 import io.kubernetes.client.openapi.Configuration
 import io.kubernetes.client.openapi.apis.CoreV1Api

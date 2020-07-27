@@ -1,6 +1,7 @@
 package com.ludd.gateway
 
 import com.ludd.rpc.AbstractTcpServer
+import com.ludd.rpc.IRpcServiceProvider
 import com.ludd.rpc.to.Message
 import io.ktor.util.KtorExperimentalAPI
 import io.ktor.utils.io.ByteReadChannel
@@ -43,7 +44,7 @@ class GatewayServer(@Value("\${gateway.tcp_server.port}") port: Integer):
     private suspend fun callRpc(message: Message.RpcRequest): Message.RpcResponse {
         logger.info("message for service ${message.service} received")
         val service = serviceProvider.get(message.service)
-        val result = service.call(message.arg)
+        val result = service.call(message.method, message.arg)
         return Message.RpcResponse.newBuilder().setResult(result).build()
     }
 

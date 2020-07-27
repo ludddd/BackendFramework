@@ -8,7 +8,8 @@ message RpcMessage {
 
 message RpcRequest {
     string service = 1;
-    bytes arg = 2;
+    string method = 2;
+    bytes arg = 3;
 }
 
 message RpcResponse {
