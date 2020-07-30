@@ -3,6 +3,7 @@ package com.ludd.rpc
 import com.google.protobuf.ByteString
 import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.assertThrows
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.stereotype.Component
@@ -25,6 +26,7 @@ class ServiceA {
 @SpringBootTest
 class RpcMethodTest {
 
+    @Suppress("unused")
     @Autowired
     private lateinit var rpcService: ServiceA
     @Autowired
@@ -40,5 +42,19 @@ class RpcMethodTest {
         val arg = ByteString.copyFrom("aaa", Charset.defaultCharset())
         val rez = rpcAutoDiscovery.call("serviceA","methodA", arg)
         assertEquals(arg, rez)
+    }
+
+    @Test
+    fun callMissingMethod() = runBlocking {
+        val arg = ByteString.copyFrom("aaa", Charset.defaultCharset())
+        assertThrows<NoMethodException>{ runBlocking { rpcAutoDiscovery.call("serviceA","wrongMethod", arg) } }
+        Unit
+    }
+
+    @Test
+    fun callMissingService() = runBlocking {
+        val arg = ByteString.copyFrom("aaa", Charset.defaultCharset())
+        assertThrows<NoServiceException>{ runBlocking { rpcAutoDiscovery.call("wrongService","wrongMethod", arg) } }
+        Unit
     }
 }

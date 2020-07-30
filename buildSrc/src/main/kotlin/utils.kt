@@ -80,6 +80,7 @@ private fun Project.setCompileFlags() {
             jvmTarget = "11"
         }
     }
+
 }
 
 private fun Project.excludeGradleApiFromBuild() {

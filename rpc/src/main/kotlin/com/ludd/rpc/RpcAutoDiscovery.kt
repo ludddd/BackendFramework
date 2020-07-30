@@ -12,6 +12,9 @@ import kotlin.reflect.full.memberFunctions
 
 data class MethodWithBoundArgument(val arg: Any, val method: KFunction<*>) {}
 
+class NoMethodException(service: String, method: String): Exception("No method $method in service $service")
+class NoServiceException(service: String): Exception("No service $service found")
+
 @ExperimentalStdlibApi
 @Component
 class RpcAutoDiscovery {
@@ -30,12 +33,12 @@ class RpcAutoDiscovery {
     }
 
     suspend fun call(service: String, method: String, arg: ByteString): ByteString {
-        val serviceMap = methodMap[service] ?: error("no service $service is found")
-        val func = serviceMap[method] ?: error("no method $method is found in service $service")
+        val serviceMap = methodMap[service] ?: throw NoServiceException(service)
+        val func = serviceMap[method] ?: throw NoMethodException(service, method)
         val rez = func.method.callSuspend(func.arg, arg)
         return (rez as ByteString)
     }
 
-    fun hasMethod(service: String, method: String) = methodMap.containsKey(service) && methodMap[service]!!.containsKey(method)
+    fun hasMethod(service: String, method: String) = methodMap[service]?.containsKey(method) ?: false
 }
 
