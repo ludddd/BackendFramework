@@ -5,5 +5,4 @@ import org.springframework.context.annotation.ComponentScan
 
 @SpringBootConfiguration
 @ComponentScan
-class TestConfiguration {
-}
+class TestConfiguration

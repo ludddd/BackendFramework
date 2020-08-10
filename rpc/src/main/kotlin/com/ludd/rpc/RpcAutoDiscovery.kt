@@ -1,6 +1,5 @@
 package com.ludd.rpc
 
-import com.google.protobuf.ByteString
 import mu.KotlinLogging
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.context.ApplicationContext
@@ -11,20 +10,20 @@ import kotlin.reflect.full.findAnnotation
 import kotlin.reflect.full.hasAnnotation
 import kotlin.reflect.full.memberFunctions
 
-data class MethodWithBoundArgument(val arg: Any, val method: KFunction<*>) {}
+data class MethodWithBoundArgument(val arg: Any, val method: KFunction<*>)
 
 class NoMethodException(service: String, method: String): Exception("No method $method in service $service")
 class NoServiceException(service: String): Exception("No service $service found")
 
 private val logger = KotlinLogging.logger {}
 
+@ExperimentalStdlibApi
 @Component
 class RpcAutoDiscovery {
 
     @Autowired
     private lateinit var context: ApplicationContext
 
-    @OptIn(ExperimentalStdlibApi::class)
     private fun getRpcMethods(obj: Any): Map<String, MethodWithBoundArgument> {
         val annotated = obj.javaClass.kotlin.memberFunctions.filter { it.hasAnnotation<RpcMethod>() }
         return annotated.map {
