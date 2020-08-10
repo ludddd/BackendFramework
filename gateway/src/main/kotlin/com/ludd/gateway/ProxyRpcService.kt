@@ -24,7 +24,7 @@ class ProxyRpcService(private val serviceName:String,
     private val selectorManager = ActorSelectorManager(Dispatchers.IO)
     private var proxyConnection: ProxyConnection? = null
 
-    override suspend fun call(method: String, arg: ByteString): ByteString {
+    override suspend fun call(method: String, arg: ByteArray): ByteArray {
         if (!isConnected()) {
             connect()
         }
@@ -53,11 +53,11 @@ class ProxyConnection(private val serviceName: String, private val socket: Socke
     val isClosed: Boolean
         get() = socket.isClosed || write.isClosedForWrite || read.isClosedForRead
 
-    suspend fun call(arg: ByteString): ByteString {
+    suspend fun call(arg: ByteArray): ByteArray {
         val message = Message.RpcRequest
             .newBuilder()
             .setService(serviceName)
-            .setArg(arg)
+            .setArg(ByteString.copyFrom(arg))
             .build()
         withContext(Dispatchers.IO) {
             message.writeDelimitedTo(write.toOutputStream())
@@ -66,6 +66,6 @@ class ProxyConnection(private val serviceName: String, private val socket: Socke
         val response = withContext(Dispatchers.IO) {
             Message.RpcResponse.parseDelimitedFrom(read.toInputStream())
         }
-        return response.result
+        return response.result.toByteArray()
     }
 }

@@ -6,7 +6,7 @@ import org.springframework.stereotype.Service
 
 @Service
 class EchoService: IRpcService {
-    override suspend fun call(method: String, arg: ByteString): ByteString {
+    override suspend fun call(method: String, arg: ByteArray): ByteArray {
         return arg
     }
 }

@@ -13,5 +13,9 @@ message SignInRequest {
 }
 
 message SignInResponse {
-
+    enum Code {
+        Ok = 0;
+        UserNotFound = 1;
+    }
+    Code code = 1;
 }

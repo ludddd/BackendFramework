@@ -1,5 +1,6 @@
 package com.ludd.gateway
 
+import com.google.protobuf.ByteString
 import com.ludd.rpc.AbstractTcpServer
 import com.ludd.rpc.IRpcServiceProvider
 import com.ludd.rpc.to.Message
@@ -44,8 +45,8 @@ class GatewayServer(@Value("\${gateway.tcp_server.port}") port: Integer):
     private suspend fun callRpc(message: Message.RpcRequest): Message.RpcResponse {
         logger.info("message for service ${message.service} received")
         val service = serviceProvider.get(message.service)
-        val result = service.call(message.method, message.arg)
-        return Message.RpcResponse.newBuilder().setResult(result).build()
+        val result = service.call(message.method, message.arg.toByteArray())
+        return Message.RpcResponse.newBuilder().setResult(ByteString.copyFrom(result)).build()
     }
 
     @PostConstruct

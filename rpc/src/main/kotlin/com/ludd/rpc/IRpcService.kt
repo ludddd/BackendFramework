@@ -1,9 +1,7 @@
 package com.ludd.rpc
 
-import com.google.protobuf.ByteString
-
 interface IRpcService {
-    suspend fun call(method: String, arg: ByteString): ByteString
+    suspend fun call(method: String, arg: ByteArray): ByteArray
 }
 
 interface IRpcServiceProvider {

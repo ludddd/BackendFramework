@@ -17,7 +17,7 @@ class ServiceA {
 
     @Suppress("RedundantSuspendModifier")
     @RpcMethod(name = "methodA")
-    suspend fun methodA(arg: ByteString): ByteString {
+    suspend fun methodA(arg: ByteArray): ByteArray {
         return arg
     }
 }
@@ -39,21 +39,21 @@ class RpcMethodTest {
 
     @Test
     fun callMethod() = runBlocking {
-        val arg = ByteString.copyFrom("aaa", Charset.defaultCharset())
+        val arg = "aaa".encodeToByteArray()
         val rez = rpcAutoDiscovery.call("serviceA","methodA", arg)
         assertEquals(arg, rez)
     }
 
     @Test
     fun callMissingMethod() = runBlocking {
-        val arg = ByteString.copyFrom("aaa", Charset.defaultCharset())
+        val arg = "aaa".encodeToByteArray()
         assertThrows<NoMethodException>{ runBlocking { rpcAutoDiscovery.call("serviceA","wrongMethod", arg) } }
         Unit
     }
 
     @Test
     fun callMissingService() = runBlocking {
-        val arg = ByteString.copyFrom("aaa", Charset.defaultCharset())
+        val arg = "aaa".encodeToByteArray()
         assertThrows<NoServiceException>{ runBlocking { rpcAutoDiscovery.call("wrongService","wrongMethod", arg) } }
         Unit
     }
