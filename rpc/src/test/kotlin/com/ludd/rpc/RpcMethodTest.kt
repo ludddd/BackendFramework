@@ -18,6 +18,12 @@ class ServiceA {
     suspend fun methodA(arg: ByteArray): ByteArray {
         return arg
     }
+
+    @Suppress("RedundantSuspendModifier")
+    @RpcMethod(name = "methodWrongReturn")
+    suspend fun methodWrongReturn(arg: ByteArray): Int {
+        return 1
+    }
 }
 
 @ExperimentalStdlibApi
@@ -53,6 +59,12 @@ class RpcMethodTest {
     fun callMissingService() = runBlocking {
         val arg = "aaa".encodeToByteArray()
         assertThrows<NoServiceException>{ runBlocking { rpcAutoDiscovery.call("wrongService","wrongMethod", arg) } }
+        Unit
+    }
+
+    @Test
+    fun unsupportedMethodReturnType() = runBlocking {
+        assertThrows<UnsupportedRpcMethodReturnType>{ runBlocking { rpcAutoDiscovery.call("serviceA","methodWrongReturn", "".encodeToByteArray()) } }
         Unit
     }
 }

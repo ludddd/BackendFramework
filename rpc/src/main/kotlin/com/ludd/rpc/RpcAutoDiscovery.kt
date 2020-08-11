@@ -1,9 +1,13 @@
 package com.ludd.rpc
 
+import com.google.protobuf.AbstractMessage
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import mu.KotlinLogging
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.context.ApplicationContext
 import org.springframework.stereotype.Component
+import java.io.ByteArrayOutputStream
 import kotlin.reflect.KFunction
 import kotlin.reflect.full.callSuspend
 import kotlin.reflect.full.findAnnotation
@@ -31,6 +35,7 @@ class RpcAutoDiscovery {
         }.toMap()
     }
 
+    //TODO: checl method signature at start up and through exception if there is method with wrong signature
     private val methodMap: Map<String, Map<String, MethodWithBoundArgument>> by lazy {
         logger.info("Scanning for local rpc services")
         val services = context.getBeansWithAnnotation(RpcService::class.java)
@@ -41,8 +46,21 @@ class RpcAutoDiscovery {
     suspend fun call(service: String, method: String, arg: ByteArray): ByteArray {
         val serviceMap = methodMap[service] ?: throw NoServiceException(service)
         val func = serviceMap[method] ?: throw NoMethodException(service, method)
-        val rez = func.method.callSuspend(func.arg, arg)
-        return (rez as ByteArray)
+        return when (val rez = func.method.callSuspend(func.arg, arg)) {
+            is ByteArray -> rez
+            is AbstractMessage -> serializeMessage(rez)
+            else -> {
+                throw UnsupportedRpcMethodReturnType(service, method, rez?.javaClass)
+            }
+        }
+    }
+
+    private suspend fun serializeMessage(rez: AbstractMessage): ByteArray {
+        val out = ByteArrayOutputStream()
+        withContext(Dispatchers.IO) {
+            rez.writeDelimitedTo(out)
+        }
+        return out.toByteArray()
     }
 
     fun hasMethod(service: String, method: String) = methodMap[service]?.containsKey(method) ?: false
@@ -56,4 +74,9 @@ class RpcAutoDiscovery {
 
     }
 }
+
+class UnsupportedRpcMethodReturnType(service: String, method: String, javaClass: Class<Any>?)
+    : Exception("Method $method in service $service returns object of unsupported class $javaClass")
+
+
 

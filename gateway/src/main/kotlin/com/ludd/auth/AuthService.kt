@@ -13,14 +13,12 @@ import java.io.ByteArrayOutputStream
 class AuthService {
 
     @RpcMethod(name = "signIn")
-    suspend fun signIn(arg: ByteArray): ByteArray
+    suspend fun signIn(arg: ByteArray): Auth.SignInResponse
     {
         val rez = Auth.SignInResponse
             .newBuilder()
             .setCode(Auth.SignInResponse.Code.UserNotFound)
             .build()
-        val out = ByteArrayOutputStream()
-        rez.writeDelimitedTo(out)
-        return out.toByteArray()
+        return rez
     }
 }
