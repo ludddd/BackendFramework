@@ -7,7 +7,6 @@ import mu.KotlinLogging
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.context.ApplicationContext
 import org.springframework.stereotype.Component
-import java.io.ByteArrayInputStream
 import java.io.ByteArrayOutputStream
 import java.io.InputStream
 import kotlin.reflect.KClass
@@ -22,6 +21,8 @@ class NoMethodException(service: String, method: String): Exception("No method $
 class NoServiceException(service: String): Exception("No service $service found")
 
 private val logger = KotlinLogging.logger {}
+
+const val PARSE_METHOD_NAME = "parseFrom"
 
 @ExperimentalStdlibApi
 @Component
@@ -74,11 +75,12 @@ class RpcAutoDiscovery {
     }
 
     private fun deserializeMessage(msgClass: KClass<*>, arg: ByteArray): Any? {
+
         val parseMethod = msgClass.staticFunctions.find {
-            it.name == "parseDelimitedFrom" &&
-                    it.parameters.size == 1 &&
-                    it.parameters[0].type.jvmErasure.isSubclassOf(InputStream::class)
-        } ?: throw Exception("Failed to find static parseDelimitedFrom method in class $msgClass")
+                it.name == PARSE_METHOD_NAME &&
+                it.parameters.size == 1 &&
+                it.parameters[0].type.jvmErasure.isSubclassOf(InputStream::class)
+        } ?: throw Exception("Failed to find static $PARSE_METHOD_NAME method in class $msgClass")
         val rez = parseMethod.call(arg.inputStream())
         return rez
     }
