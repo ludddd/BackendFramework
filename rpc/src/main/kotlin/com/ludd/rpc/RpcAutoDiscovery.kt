@@ -7,12 +7,14 @@ import mu.KotlinLogging
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.context.ApplicationContext
 import org.springframework.stereotype.Component
+import java.io.ByteArrayInputStream
 import java.io.ByteArrayOutputStream
+import java.io.InputStream
+import kotlin.reflect.KClass
 import kotlin.reflect.KFunction
-import kotlin.reflect.full.callSuspend
-import kotlin.reflect.full.findAnnotation
-import kotlin.reflect.full.hasAnnotation
-import kotlin.reflect.full.memberFunctions
+import kotlin.reflect.KType
+import kotlin.reflect.full.*
+import kotlin.reflect.jvm.jvmErasure
 
 data class MethodWithBoundArgument(val arg: Any, val method: KFunction<*>)
 
@@ -46,13 +48,39 @@ class RpcAutoDiscovery {
     suspend fun call(service: String, method: String, arg: ByteArray): ByteArray {
         val serviceMap = methodMap[service] ?: throw NoServiceException(service)
         val func = serviceMap[method] ?: throw NoMethodException(service, method)
-        return when (val rez = func.method.callSuspend(func.arg, arg)) {
+        val argType = func.method.parameters[1].type
+        val jvmErasure = argType.jvmErasure
+        val convertedArg = convertArg(jvmErasure, arg) ?: throw UnsupportedRpcMethodArgumentType(service, method, argType)
+        return when (val rez = func.method.callSuspend(func.arg, convertedArg)) {
             is ByteArray -> rez
             is AbstractMessage -> serializeMessage(rez)
             else -> {
                 throw UnsupportedRpcMethodReturnType(service, method, rez?.javaClass)
             }
         }
+    }
+
+    private fun convertArg(
+        jvmErasure: KClass<*>,
+        arg: ByteArray
+    ): Any? {
+        return when {
+            jvmErasure.isSubclassOf(ByteArray::class) -> arg
+            jvmErasure.isSubclassOf(AbstractMessage::class) -> {
+                deserializeMessage(jvmErasure, arg)
+            }
+            else -> null
+        }
+    }
+
+    private fun deserializeMessage(msgClass: KClass<*>, arg: ByteArray): Any? {
+        val parseMethod = msgClass.staticFunctions.find {
+            it.name == "parseDelimitedFrom" &&
+                    it.parameters.size == 1 &&
+                    it.parameters[0].type.jvmErasure.isSubclassOf(InputStream::class)
+        } ?: throw Exception("Failed to find static parseDelimitedFrom method in class $msgClass")
+        val rez = parseMethod.call(arg.inputStream())
+        return rez
     }
 
     private suspend fun serializeMessage(rez: AbstractMessage): ByteArray {
@@ -74,6 +102,9 @@ class RpcAutoDiscovery {
 
     }
 }
+
+class UnsupportedRpcMethodArgumentType(service: String, method: String, type: KType) :
+    Exception("Method $method in service $service has unsupported argument type $type")
 
 class UnsupportedRpcMethodReturnType(service: String, method: String, javaClass: Class<Any>?)
     : Exception("Method $method in service $service returns object of unsupported class $javaClass")
