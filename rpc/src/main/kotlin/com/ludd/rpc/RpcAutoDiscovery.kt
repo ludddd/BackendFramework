@@ -35,7 +35,7 @@ class RpcAutoDiscovery {
         }.toMap()
     }
 
-    //TODO: checl method signature at start up and through exception if there is method with wrong signature
+    //TODO: check method signature at start up and through exception if there is method with wrong signature
     private val methodMap: Map<String, Map<String, MethodWithBoundArgument>> by lazy {
         logger.info("Scanning for local rpc services")
         val services = context.getBeansWithAnnotation(RpcService::class.java)
