@@ -24,6 +24,12 @@ class ServiceA {
     suspend fun methodWrongReturn(arg: ByteArray): Int {
         return 1
     }
+
+    @Suppress("RedundantSuspendModifier")
+    @RpcMethod
+    suspend fun methodC(arg: ByteArray): ByteArray {
+        return arg
+    }
 }
 
 @ExperimentalStdlibApi
@@ -39,6 +45,11 @@ class RpcMethodTest {
     @Test
     fun discoverMethod() {
         assertTrue { rpcAutoDiscovery.hasMethod("serviceA", "methodA") }
+    }
+
+    @Test
+    fun optionalName() {
+        assertTrue { rpcAutoDiscovery.hasMethod("serviceA", "methodC") }
     }
 
     @Test

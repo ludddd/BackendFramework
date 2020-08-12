@@ -34,8 +34,13 @@ class RpcAutoDiscovery {
     private fun getRpcMethods(obj: Any): Map<String, MethodWithBoundArgument> {
         val annotated = obj.javaClass.kotlin.memberFunctions.filter { it.hasAnnotation<RpcMethod>() }
         return annotated.map {
-            it.findAnnotation<RpcMethod>()!!.name to MethodWithBoundArgument(obj, it)
+            methodName(it) to MethodWithBoundArgument(obj, it)
         }.toMap()
+    }
+
+    private fun methodName(it: KFunction<*>): String {
+        val annotation = it.findAnnotation<RpcMethod>()!!
+        return if (annotation.name == "null") it.name else annotation.name
     }
 
     //TODO: check method signature at start up and through exception if there is method with wrong signature

@@ -15,7 +15,7 @@ class AuthService {
     private lateinit var authRepository: IAuthRepository
 
     @Suppress("RedundantSuspendModifier")
-    @RpcMethod(name = "signIn")
+    @RpcMethod
     suspend fun signIn(arg: Auth.SignInRequest): Auth.SignInResponse
     {
         val code = if (authRepository.hasPlayer(arg.type.name, arg.id)) {
@@ -30,7 +30,7 @@ class AuthService {
     }
 
     @Suppress("RedundantSuspendModifier")
-    @RpcMethod(name = "register")
+    @RpcMethod
     suspend fun register(request: Auth.RegisterRequest): Auth.RegisterResponse {
         val code = if (authRepository.hasPlayer(request.type.name, request.id)) {
             Auth.RegisterResponse.Code.AlreadyRegistered
