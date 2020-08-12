@@ -19,3 +19,16 @@ message SignInResponse {
     }
     Code code = 1;
 }
+
+message RegisterRequest {
+    IdType type = 1;
+    string id = 2;
+}
+
+message RegisterResponse {
+    enum Code {
+        Ok = 0;
+        AlreadyRegistered = 1;
+    }
+    Code code = 1;
+}
