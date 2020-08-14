@@ -24,7 +24,6 @@ private val logger = KotlinLogging.logger {}
 
 const val PARSE_METHOD_NAME = "parseFrom"
 
-@ExperimentalStdlibApi
 @Component
 class RpcAutoDiscovery {
 

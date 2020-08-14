@@ -32,7 +32,6 @@ class ServiceA {
     }
 }
 
-@ExperimentalStdlibApi
 @SpringBootTest
 class RpcMethodTest {
 
