@@ -1,6 +1,7 @@
 package com.ludd.gateway
 
 import com.ludd.rpc.AbstractTcpServer
+import com.ludd.rpc.SessionContext
 import io.ktor.util.KtorExperimentalAPI
 import io.ktor.utils.io.ByteReadChannel
 import io.ktor.utils.io.ByteWriteChannel
@@ -21,7 +22,11 @@ private val logger = KotlinLogging.logger {}
 @ConditionalOnProperty("gateway.echo_server.port")
 class TcpEchoServer(@Value("\${gateway.echo_server.port}") port: Integer): AbstractTcpServer(port.toInt()) {
 
-    override suspend fun processMessages(read: ByteReadChannel, write: ByteWriteChannel) {
+    override suspend fun processMessages(
+        read: ByteReadChannel,
+        write: ByteWriteChannel,
+        sessionContext: SessionContext
+    ) {
         val line = read.readUTF8Line()
         logger.debug("received: $line")
         write.writeStringUtf8("$line\n")

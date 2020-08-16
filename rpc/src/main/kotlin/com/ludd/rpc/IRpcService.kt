@@ -1,7 +1,7 @@
 package com.ludd.rpc
 
 interface IRpcService {
-    suspend fun call(method: String, arg: ByteArray): ByteArray
+    suspend fun call(method: String, arg: ByteArray, sessionContext: SessionContext): ByteArray
 }
 
 interface IRpcServiceProvider {

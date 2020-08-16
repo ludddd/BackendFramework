@@ -1,5 +1,6 @@
 package com.ludd.rpc
 
+import com.ludd.test_util.mockSessionContext
 import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
@@ -54,27 +55,30 @@ class RpcMethodTest {
     @Test
     fun callMethod() = runBlocking {
         val arg = "aaa".encodeToByteArray()
-        val rez = rpcAutoDiscovery.call("serviceA","methodA", arg)
+        val rez = rpcAutoDiscovery.call("serviceA","methodA", arg, mockSessionContext())
         assertEquals(arg, rez)
     }
 
     @Test
     fun callMissingMethod() = runBlocking {
         val arg = "aaa".encodeToByteArray()
-        assertThrows<NoMethodException>{ runBlocking { rpcAutoDiscovery.call("serviceA","wrongMethod", arg) } }
+        assertThrows<NoMethodException>{ runBlocking {
+            rpcAutoDiscovery.call("serviceA","wrongMethod", arg, mockSessionContext()) } }
         Unit
     }
 
     @Test
     fun callMissingService() = runBlocking {
         val arg = "aaa".encodeToByteArray()
-        assertThrows<NoServiceException>{ runBlocking { rpcAutoDiscovery.call("wrongService","wrongMethod", arg) } }
+        assertThrows<NoServiceException>{ runBlocking {
+            rpcAutoDiscovery.call("wrongService","wrongMethod", arg, mockSessionContext()) } }
         Unit
     }
 
     @Test
     fun unsupportedMethodReturnType() = runBlocking {
-        assertThrows<UnsupportedRpcMethodReturnType>{ runBlocking { rpcAutoDiscovery.call("serviceA","methodWrongReturn", "".encodeToByteArray()) } }
+        assertThrows<UnsupportedRpcMethodReturnType>{ runBlocking {
+            rpcAutoDiscovery.call("serviceA","methodWrongReturn", "".encodeToByteArray(), mockSessionContext()) } }
         Unit
     }
 }

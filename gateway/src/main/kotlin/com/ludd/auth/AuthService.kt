@@ -3,6 +3,7 @@ package com.ludd.auth
 import com.ludd.auth.to.Auth
 import com.ludd.rpc.RpcMethod
 import com.ludd.rpc.RpcService
+import com.ludd.rpc.SessionContext
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty
 import org.springframework.stereotype.Service
@@ -16,28 +17,32 @@ class AuthService {
 
     @Suppress("RedundantSuspendModifier")
     @RpcMethod
-    suspend fun signIn(arg: Auth.SignInRequest): Auth.SignInResponse
+    suspend fun signIn(arg: Auth.SignInRequest, sessionContext: SessionContext): Auth.SignInResponse
     {
-        val code = if (authRepository.hasPlayer(arg.type.name, arg.id)) {
-            Auth.SignInResponse.Code.Ok
-        } else {
+        val playerId = authRepository.findPlayer(arg.type.name, arg.id)
+        val rez = Auth.SignInResponse.newBuilder()
+        if (playerId == null) {
             Auth.SignInResponse.Code.UserNotFound
+            rez.code = Auth.SignInResponse.Code.UserNotFound
+        } else {
+            rez.code = Auth.SignInResponse.Code.Ok
+            sessionContext.authenticate(playerId)
         }
-        return Auth.SignInResponse
-            .newBuilder()
-            .setCode(code)
-            .build()
+        return rez.build()
     }
 
     @Suppress("RedundantSuspendModifier")
     @RpcMethod
-    suspend fun register(request: Auth.RegisterRequest): Auth.RegisterResponse {
-        val code = if (authRepository.hasPlayer(request.type.name, request.id)) {
-            Auth.RegisterResponse.Code.AlreadyRegistered
+    suspend fun register(request: Auth.RegisterRequest, sessionContext: SessionContext): Auth.RegisterResponse {
+        val rez = Auth.RegisterResponse.newBuilder()
+        val playerId = authRepository.findPlayer(request.type.name, request.id)
+        if (playerId != null) {
+            rez.code = Auth.RegisterResponse.Code.AlreadyRegistered
         } else {
-            authRepository.addPlayer(request.type.name, request.id)
-            Auth.RegisterResponse.Code.Ok
+            val newPlayerId = authRepository.addPlayer(request.type.name, request.id)
+            rez.code = Auth.RegisterResponse.Code.Ok
+            sessionContext.authenticate(newPlayerId)
         }
-        return Auth.RegisterResponse.newBuilder().setCode(code).build()
+        return rez.build()
     }
 }

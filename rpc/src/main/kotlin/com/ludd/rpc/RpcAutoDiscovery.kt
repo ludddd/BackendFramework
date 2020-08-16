@@ -50,13 +50,20 @@ class RpcAutoDiscovery {
         services.values.map { it.javaClass.kotlin.findAnnotation<RpcService>()!!.name to getRpcMethods(it) }.toMap()
     }
 
-    suspend fun call(service: String, method: String, arg: ByteArray): ByteArray {
+    suspend fun call(service: String, method: String, arg: ByteArray, sessionContext: SessionContext ): ByteArray {
         val serviceMap = methodMap[service] ?: throw NoServiceException(service)
         val func = serviceMap[method] ?: throw NoMethodException(service, method)
         val argType = func.method.parameters[1].type
-        val jvmErasure = argType.jvmErasure
-        val convertedArg = convertArg(jvmErasure, arg) ?: throw UnsupportedRpcMethodArgumentType(service, method, argType)
-        return when (val rez = func.method.callSuspend(func.arg, convertedArg)) {
+        val args = listOf(func.arg) + func.method.parameters.drop(1).map {
+            val jvmErasure = it.type.jvmErasure
+            when {
+                jvmErasure.isSubclassOf(ByteArray::class) -> arg
+                jvmErasure.isSubclassOf(AbstractMessage::class) -> deserializeMessage(jvmErasure, arg)
+                jvmErasure.isSubclassOf(SessionContext::class) -> sessionContext
+                else -> throw UnsupportedRpcMethodArgumentType(service, method, argType)
+            }
+        }
+        return when (val rez = func.method.callSuspend(*args.toTypedArray())) {
             is ByteArray -> rez
             is AbstractMessage -> serializeMessage(rez)
             else -> {
@@ -101,8 +108,12 @@ class RpcAutoDiscovery {
     fun hasService(service: String): Boolean = methodMap.containsKey(service)
     fun getService(service: String): IRpcService {
         return object : IRpcService {
-            override suspend fun call(method: String, arg: ByteArray): ByteArray {
-                return call(service, method, arg)
+            override suspend fun call(
+                method: String,
+                arg: ByteArray,
+                sessionContext: SessionContext
+            ): ByteArray {
+                return call(service, method, arg, sessionContext)
             }
         }
 

@@ -1,6 +1,6 @@
 package com.ludd.auth
 
 interface IAuthRepository {
-    fun hasPlayer(type: String, id: String): Boolean
-    fun addPlayer(name: String, id: String)
+    fun findPlayer(type: String, id: String): String?
+    fun addPlayer(name: String, id: String): String
 }

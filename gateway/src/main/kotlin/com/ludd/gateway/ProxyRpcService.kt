@@ -2,6 +2,7 @@ package com.ludd.gateway
 
 import com.google.protobuf.ByteString
 import com.ludd.rpc.IRpcService
+import com.ludd.rpc.SessionContext
 import com.ludd.rpc.to.Message
 import io.ktor.network.selector.ActorSelectorManager
 import io.ktor.network.sockets.*
@@ -24,7 +25,7 @@ class ProxyRpcService(private val serviceName:String,
     private val selectorManager = ActorSelectorManager(Dispatchers.IO)
     private var proxyConnection: ProxyConnection? = null
 
-    override suspend fun call(method: String, arg: ByteArray): ByteArray {
+    override suspend fun call(method: String, arg: ByteArray, sessionContext: SessionContext): ByteArray {
         if (!isConnected()) {
             connect()
         }
