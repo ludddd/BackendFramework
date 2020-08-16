@@ -8,6 +8,7 @@ class SessionContext(val remoteAddress: SocketAddress) {
         private set
 
     fun authenticate(playerId: String) {
+        assert(this.playerId == null) {"session is already authenticated"}
         this.playerId = playerId
     }
 }
