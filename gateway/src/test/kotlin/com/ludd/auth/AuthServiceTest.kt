@@ -39,7 +39,7 @@ class AuthServiceTest {
             authService.register(registerRequest("userA"), mockSessionContext()).code)
     }
 
-    private fun setMockUser(id: String, enabled: Boolean) {
+    private suspend fun setMockUser(id: String, enabled: Boolean) {
         Mockito.`when`(authRepository.findPlayer(Auth.IdType.DEVICE_ID.name, id)).thenReturn(
             if (enabled) "UUID_$id" else null
         )
