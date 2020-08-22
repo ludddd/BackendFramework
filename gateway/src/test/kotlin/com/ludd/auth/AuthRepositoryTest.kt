@@ -77,7 +77,7 @@ internal class AuthRepositoryTest {
     @Test
     fun duplicate() = runBlocking {
         repository.addPlayer("deviceId", "userA")
-        assertThrows<DuplicatePlayerIdExeption> {
+        assertThrows<DuplicatePlayerIdException> {
             runBlocking {
                 repository.addPlayer("deviceId", "userA")
             }
