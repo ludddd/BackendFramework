@@ -2,11 +2,11 @@ package com.ludd.gateway
 
 import com.ludd.gateway.util.sendEchoMessage
 import com.ludd.rpc.EchoServer
-import io.ktor.network.selector.ActorSelectorManager
-import io.ktor.network.sockets.aSocket
-import io.ktor.network.sockets.openReadChannel
-import io.ktor.network.sockets.openWriteChannel
-import io.ktor.util.KtorExperimentalAPI
+import com.ludd.rpc.SessionContext
+import com.ludd.rpc.to.Message
+import io.ktor.network.selector.*
+import io.ktor.network.sockets.*
+import io.ktor.util.*
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
@@ -18,6 +18,7 @@ import org.junit.jupiter.api.Timeout
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.test.annotation.DirtiesContext
+import java.net.InetSocketAddress
 import java.nio.charset.Charset
 import java.util.concurrent.TimeUnit
 import kotlin.test.assertEquals
@@ -86,6 +87,27 @@ internal class ProxyRpcServiceProviderTest {
         assertEquals("aaa", parsed.name)
         assertEquals("bbb", parsed.host)
         assertEquals(10, parsed.port)
+    }
 
+    @Test
+    fun sessionContext() = runBlocking{
+        val channel = object: IProxyConnectionChannel {
+            var messageWritten: Message.InnerRpcRequest? = null
+
+            override suspend fun write(msg: Message.InnerRpcRequest) {
+                messageWritten = msg
+            }
+
+            override suspend fun read(): Message.RpcResponse {
+                return Message.RpcResponse.getDefaultInstance()
+            }
+
+            override fun isClosed(): Boolean = true
+        }
+        val proxy = ProxyConnection("test", channel)
+        val context = SessionContext(InetSocketAddress(0))
+        context.authenticate("playerA")
+        proxy.call("aaa".toByteArray(Charset.defaultCharset()), context)
+        assertEquals("playerA", channel.messageWritten?.context?.playerId)
     }
 }
