@@ -7,10 +7,7 @@ import com.ludd.rpc.to.Message
 import io.ktor.network.selector.*
 import io.ktor.network.sockets.*
 import io.ktor.util.*
-import io.ktor.utils.io.*
-import io.ktor.utils.io.jvm.javaio.*
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
 import mu.KotlinLogging
 
 private val logger = KotlinLogging.logger {}
@@ -38,41 +35,21 @@ class ProxyRpcService(
     private suspend fun connect() {
         logger.info("Connecting to $host:$port")
         val socket = aSocket(selectorManager).tcp().connect(host, port)
-        proxyConnection = ProxyConnection(serviceName, SocketProxyConnectionChannel(socket))
+        proxyConnection = ProxyConnection(serviceName, SocketRpcMessageChannel(socket))
     }
 
 }
 
-interface IProxyConnectionChannel {
+interface IRpcMessageChannel {
     suspend fun write(msg: Message.InnerRpcRequest)
     suspend fun read(): Message.RpcResponse
     fun isClosed(): Boolean
 }
 
-class SocketProxyConnectionChannel(private val socket: Socket): IProxyConnectionChannel {
-
-    private val write: ByteWriteChannel = socket.openWriteChannel(autoFlush = true)
-    private val read: ByteReadChannel = socket.openReadChannel()
-    override suspend fun write(msg: Message.InnerRpcRequest) {
-        withContext(Dispatchers.IO) {
-            msg.writeDelimitedTo(write.toOutputStream())
-        }
-    }
-
-    override suspend fun read(): Message.RpcResponse {
-        return withContext(Dispatchers.IO) {
-            Message.RpcResponse.parseDelimitedFrom(read.toInputStream())
-        }
-    }
-
-    override fun isClosed(): Boolean = socket.isClosed || write.isClosedForWrite || read.isClosedForRead
-
-}
-
 //TODO: should have pool of connection to each service
 //to allow multiple calls from different users at once
 //but no more than connection pool size
-class ProxyConnection(private val serviceName: String, private val channel: IProxyConnectionChannel) {
+class ProxyConnection(private val serviceName: String, private val channel: IRpcMessageChannel) {
 
     val isClosed: Boolean
         get() = channel.isClosed()

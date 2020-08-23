@@ -91,7 +91,7 @@ internal class ProxyRpcServiceProviderTest {
 
     @Test
     fun sessionContext() = runBlocking{
-        val channel = object: IProxyConnectionChannel {
+        val channel = object: IRpcMessageChannel {
             var messageWritten: Message.InnerRpcRequest? = null
 
             override suspend fun write(msg: Message.InnerRpcRequest) {
