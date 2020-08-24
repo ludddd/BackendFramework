@@ -2,16 +2,14 @@ package com.ludd.auth
 
 import kotlinx.coroutines.runBlocking
 import mu.KotlinLogging
-import org.junit.jupiter.api.AfterEach
+import org.junit.jupiter.api.*
 import org.junit.jupiter.api.Assertions.assertEquals
-import org.junit.jupiter.api.BeforeEach
-import org.junit.jupiter.api.Test
-import org.junit.jupiter.api.assertThrows
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.test.annotation.DirtiesContext
 import org.testcontainers.containers.GenericContainer
 import java.time.Duration
+import java.util.concurrent.TimeUnit
 import kotlin.test.assertNotEquals
 import kotlin.test.assertNull
 
@@ -22,6 +20,7 @@ private val logger = KotlinLogging.logger {}
 
 @SpringBootTest
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_EACH_TEST_METHOD)    //TODO:  testcontainers changes port on each start so we had to reinit mongo connection
+@Timeout(1, unit = TimeUnit.MINUTES)
 internal class AuthRepositoryTest {
 
     private val echo = KGenericContainer("mongo:4.4.0-bionic")
