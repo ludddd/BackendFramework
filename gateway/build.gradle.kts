@@ -25,6 +25,8 @@ dependencies {
     testImplementation("org.testcontainers:testcontainers:$test_containers_version")
     testImplementation("org.testcontainers:junit-jupiter:$test_containers_version")
     implementation("io.kubernetes:client-java:8.0.2")
+    implementation("org.litote.kmongo:kmongo:4.1.0")
+    implementation("org.litote.kmongo:kmongo-coroutine:4.1.0")
 }
 
 idea.module {

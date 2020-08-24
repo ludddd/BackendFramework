@@ -9,7 +9,7 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty
 import org.springframework.boot.runApplication
 import org.springframework.stereotype.Component
 
-@SpringBootApplication(scanBasePackages = ["com.ludd.gateway", "com.ludd.rpc"])
+@SpringBootApplication(scanBasePackages = ["com.ludd", "com.ludd.rpc"])
 class GatewayApplication
 
 fun main(args: Array<String>) {

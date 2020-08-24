@@ -1,0 +1,34 @@
+syntax = "proto3";
+package com.ludd.auth.to;
+
+enum IdType {
+    DEVICE_ID = 0;
+    GOOGLE_PLAY = 1;
+    GAME_CENTER = 2;
+}
+
+message SignInRequest {
+    IdType type = 1;
+    string id = 2;
+}
+
+message SignInResponse {
+    enum Code {
+        Ok = 0;
+        UserNotFound = 1;
+    }
+    Code code = 1;
+}
+
+message RegisterRequest {
+    IdType type = 1;
+    string id = 2;
+}
+
+message RegisterResponse {
+    enum Code {
+        Ok = 0;
+        AlreadyRegistered = 1;
+    }
+    Code code = 1;
+}

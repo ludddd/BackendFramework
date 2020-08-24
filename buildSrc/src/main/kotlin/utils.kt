@@ -76,10 +76,13 @@ private fun Project.setCompileFlags() {
 
     tasks.withType<KotlinCompile> {
         kotlinOptions {
-            freeCompilerArgs = listOf("-Xjsr305=strict", "-Xuse-experimental=kotlin.Experimental")
+            freeCompilerArgs = listOf("-Xjsr305=strict",
+                "-Xuse-experimental=kotlin.Experimental",
+                "-Xopt-in=kotlin.ExperimentalStdlibApi")
             jvmTarget = "11"
         }
     }
+
 }
 
 private fun Project.excludeGradleApiFromBuild() {

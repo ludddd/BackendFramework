@@ -1,5 +1,9 @@
 package com.ludd.gateway
 
+import com.ludd.rpc.IRpcService
+import com.ludd.rpc.IRpcServiceProvider
+import com.ludd.rpc.NoServiceException
+import com.ludd.rpc.RpcAutoDiscovery
 import io.ktor.util.KtorExperimentalAPI
 import io.kubernetes.client.openapi.Configuration
 import io.kubernetes.client.openapi.apis.CoreV1Api
@@ -8,6 +12,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
 import mu.KotlinLogging
+import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty
 import org.springframework.stereotype.Service
@@ -23,9 +28,12 @@ class ProxyRpcServiceProvider(
     ): IRpcServiceProvider {
 
     private val services = mutableListOf<ServiceProxy>()
+    @Autowired
+    private lateinit var autoDiscovery: RpcAutoDiscovery
 
     override fun get(service: String): IRpcService {
-        return services.find { it.name == service }?.proxy ?: throw Exception("No service named $service")
+        if (autoDiscovery.hasService(service)) return autoDiscovery.getService(service)
+        return services.find { it.name == service }?.proxy ?: throw NoServiceException(service)
     }
 
     init {

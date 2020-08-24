@@ -27,14 +27,12 @@ class KGenericContainer(imageName: String) : GenericContainer<KGenericContainer>
 
 private val logger = KotlinLogging.logger {}
 
-const val PORT = 9001
-
 @KtorExperimentalAPI
 @Testcontainers
 class EchoIntegrationTest {
 
     private val echo = KGenericContainer("ludd.echo:0.1")
-        .withExposedPorts(PORT)
+        .withExposedPorts(9001)
         .withStartupTimeout(Duration.ofMinutes(5))
 
     @BeforeEach
@@ -54,7 +52,7 @@ class EchoIntegrationTest {
     @Timeout(1, unit = TimeUnit.MINUTES)
     fun directConnect() = runBlocking{
         val selectorManager = ActorSelectorManager(Dispatchers.IO)
-        val port = echo.getMappedPort(PORT)
+        val port = echo.firstMappedPort
         logger.info("Connecting to ${echo.host}:$port")
         val socket = aSocket(selectorManager).tcp().connect(echo.host, port)
         val write = socket.openWriteChannel(autoFlush = true)

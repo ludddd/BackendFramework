@@ -49,7 +49,9 @@ class EchoServer(@Value("\${echo_server.port}") val port: Integer) {
 @KtorExperimentalAPI
 class EchoServerImpl(port: Int): AbstractTcpServer(port) {
 
-    override suspend fun processMessages(read: ByteReadChannel, write: ByteWriteChannel) {
+    override suspend fun processMessages(read: ByteReadChannel,
+                                         write: ByteWriteChannel,
+                                         sessionContext: SessionContext) {
         val message = withContext(Dispatchers.IO) {
             Message.RpcRequest.parseDelimitedFrom(read.toInputStream(job))
         }

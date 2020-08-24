@@ -32,5 +32,6 @@ class GatewayServerTest {
         val response = sendEchoMessage(socket, "aaa")
         assertNotNull(response)
         assertEquals("aaa", response.result.toString(Charset.defaultCharset()))
+
     }
 }
