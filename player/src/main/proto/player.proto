@@ -1,0 +1,13 @@
+syntax = "proto3";
+package com.ludd.player.to;
+
+message SetNameRequest {
+    string name = 1;
+}
+
+message SetNameResponse {
+    enum Code {
+        Ok = 0;
+    }
+    Code code = 1;
+}

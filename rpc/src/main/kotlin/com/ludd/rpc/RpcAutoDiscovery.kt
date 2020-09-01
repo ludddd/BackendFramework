@@ -24,8 +24,12 @@ private val logger = KotlinLogging.logger {}
 
 const val PARSE_METHOD_NAME = "parseFrom"
 
+interface IRpcAutoDiscovery {
+    suspend fun call(service: String, method: String, arg: ByteArray, sessionContext: SessionContext): ByteArray
+}
+
 @Component
-class RpcAutoDiscovery {
+class RpcAutoDiscovery : IRpcAutoDiscovery {
 
     @Autowired
     private lateinit var context: ApplicationContext
@@ -50,7 +54,7 @@ class RpcAutoDiscovery {
         services.values.map { it.javaClass.kotlin.findAnnotation<RpcService>()!!.name to getRpcMethods(it) }.toMap()
     }
 
-    suspend fun call(service: String, method: String, arg: ByteArray, sessionContext: SessionContext ): ByteArray {
+    override suspend fun call(service: String, method: String, arg: ByteArray, sessionContext: SessionContext ): ByteArray {
         val serviceMap = methodMap[service] ?: throw NoServiceException(service)
         val func = serviceMap[method] ?: throw NoMethodException(service, method)
         val argType = func.method.parameters[1].type
