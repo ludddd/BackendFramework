@@ -15,16 +15,15 @@ import java.net.InetSocketAddress
 import java.nio.charset.Charset
 import kotlin.test.assertEquals
 
-open class MockAutoDiscovery: IRpcAutoDiscovery {
+open class MockAutoDiscovery(private val function: () -> ByteArray) : IRpcAutoDiscovery {
     override suspend fun call(
         service: String,
         method: String,
         arg: ByteArray,
         sessionContext: SessionContext
     ): ByteArray {
-        return "bbb".toByteArray(Charset.defaultCharset())
+        return function()
     }
-
 }
 
 @SpringBootTest
@@ -32,24 +31,14 @@ class RpcServerTest {
 
     @Test
     fun processMessage() = runBlocking {
-        val autoDiscovery = Mockito.spy(MockAutoDiscovery())
-        val arg = ByteString.copyFrom("aaa", Charset.defaultCharset())
-        val context = SessionContext(InetSocketAddress.createUnresolved("localhost", 0))
-        context.authenticate("playerA")
+        val autoDiscovery = mockService {
+            "bbb".toByteArray(Charset.defaultCharset())
+        }
         @Suppress("DEPRECATION")
         val server = RpcServer(autoDiscovery, Integer(0))
-        val inMsg = Message.InnerRpcRequest.newBuilder()
-            .setService("serviceA")
-            .setMethod("methodA")
-            .setArg(arg)
-            .setContext(
-                Message.RequestContext.newBuilder()
-                    .setPlayerId("playerA")
-            )
-            .build()
         val output = ByteChannel()
         server.processMessages(
-            inMsg.toInputChannel(),
+            rpcRequest().toInputChannel(),
             output,
             SessionContext(InetSocketAddress.createUnresolved("", 0))
         )
@@ -57,7 +46,7 @@ class RpcServerTest {
             "serviceA",
             "methodA",
             "aaa".toByteArray(Charset.defaultCharset()),
-            context
+            sessionContext()
         )
         val outMsg = withContext(Dispatchers.IO) {
             Message.RpcResponse.parseDelimitedFrom(output.toInputStream())
@@ -66,6 +55,42 @@ class RpcServerTest {
         Unit
     }
 
+    private fun mockService(function: () -> ByteArray) = Mockito.spy(MockAutoDiscovery(function))
 
+    @Test
+    fun noService() = runBlocking {
+        val autoDiscovery = mockService {
+            throw NoServiceException("serviceA")
+        }
+        @Suppress("DEPRECATION")
+        val server = RpcServer(autoDiscovery, Integer(0))
+        val output = ByteChannel()
+        server.processMessages(
+            rpcRequest().toInputChannel(),
+            output,
+            SessionContext(InetSocketAddress.createUnresolved("", 0))
+        )
+        val outMsg = withContext(Dispatchers.IO) {
+            Message.RpcResponse.parseDelimitedFrom(output.toInputStream())
+        }
+        assertEquals(NoServiceException("serviceA").toString(), outMsg.error)
+    }
 
+    private fun rpcRequest(): Message.InnerRpcRequest {
+        return Message.InnerRpcRequest.newBuilder()
+            .setService("serviceA")
+            .setMethod("methodA")
+            .setArg(ByteString.copyFrom("aaa", Charset.defaultCharset()))
+            .setContext(
+                Message.RequestContext.newBuilder()
+                    .setPlayerId("playerA")
+            )
+            .build()
+    }
+
+    private fun sessionContext(): SessionContext {
+        val context = SessionContext(InetSocketAddress.createUnresolved("localhost", 0))
+        context.authenticate("playerA")
+        return context
+    }
 }

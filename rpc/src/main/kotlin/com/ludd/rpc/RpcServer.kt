@@ -8,8 +8,11 @@ import io.ktor.utils.io.jvm.javaio.*
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.withContext
+import mu.KotlinLogging
 import org.springframework.beans.factory.annotation.Value
 import java.net.InetSocketAddress
+
+private val logger = KotlinLogging.logger {}
 
 @Suppress("EXPERIMENTAL_API_USAGE")
 class RpcServer(private val autoDiscovery: IRpcAutoDiscovery,
@@ -26,11 +29,23 @@ class RpcServer(private val autoDiscovery: IRpcAutoDiscovery,
             Message.InnerRpcRequest.parseDelimitedFrom(read.toInputStream(coroutineContext[Job]))
         }
 
-        val rez = autoDiscovery.call(inMessage.service, inMessage.method, inMessage.arg.toByteArray(), inMessage.context.toSessionContext())
-
-        val outMessage = Message.RpcResponse.newBuilder().setResult(ByteString.copyFrom(rez)).build()
+        val responseBuilder = Message.RpcResponse.newBuilder()
+        try {
+            val rez = autoDiscovery.call(
+                inMessage.service,
+                inMessage.method,
+                inMessage.arg.toByteArray(),
+                inMessage.context.toSessionContext()
+            )
+            responseBuilder.result = ByteString.copyFrom(rez)
+        } catch (e: Exception) {
+            logger.error(e) {
+                "Error while calling service ${inMessage.service} method ${inMessage.method} with context ${inMessage.context}"
+            }
+            responseBuilder.error = e.toString()
+        }
         withContext(Dispatchers.IO) {
-            outMessage.writeDelimitedTo(write.toOutputStream(coroutineContext[Job]))
+            responseBuilder.build().writeDelimitedTo(write.toOutputStream(coroutineContext[Job]))
         }
     }
 
