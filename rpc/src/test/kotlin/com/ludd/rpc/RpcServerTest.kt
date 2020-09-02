@@ -9,10 +9,13 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.params.ParameterizedTest
+import org.junit.jupiter.params.provider.MethodSource
 import org.mockito.Mockito
 import org.springframework.boot.test.context.SpringBootTest
 import java.net.InetSocketAddress
 import java.nio.charset.Charset
+import java.util.stream.Stream
 import kotlin.test.assertEquals
 
 open class MockAutoDiscovery(private val function: () -> ByteArray) : IRpcAutoDiscovery {
@@ -57,10 +60,19 @@ class RpcServerTest {
 
     private fun mockService(function: () -> ByteArray) = Mockito.spy(MockAutoDiscovery(function))
 
-    @Test
-    fun noService() = runBlocking {
+    companion object {
+        @JvmStatic
+        private fun exception(): Stream<Exception> = Stream.of(
+            NoServiceException("serviceA"),
+            NoMethodException("serviceA", "methodA")
+        )
+    }
+
+    @ParameterizedTest
+    @MethodSource
+    fun exception(e: Exception) = runBlocking {
         val autoDiscovery = mockService {
-            throw NoServiceException("serviceA")
+            throw e
         }
         @Suppress("DEPRECATION")
         val server = RpcServer(autoDiscovery, Integer(0))
@@ -73,7 +85,7 @@ class RpcServerTest {
         val outMsg = withContext(Dispatchers.IO) {
             Message.RpcResponse.parseDelimitedFrom(output.toInputStream())
         }
-        assertEquals(NoServiceException("serviceA").toString(), outMsg.error)
+        assertEquals(e.toString(), outMsg.error)
     }
 
     private fun rpcRequest(): Message.InnerRpcRequest {
