@@ -2,6 +2,8 @@ package com.ludd.rpc
 
 import com.google.protobuf.ByteString
 import com.ludd.rpc.to.Message
+import com.ludd.test_util.toInputChannel
+import com.ludd.test_util.toInputStream
 import io.ktor.utils.io.*
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
@@ -9,9 +11,9 @@ import kotlinx.coroutines.withContext
 import org.junit.jupiter.api.Test
 import org.mockito.Mockito
 import org.springframework.boot.test.context.SpringBootTest
-import java.io.ByteArrayOutputStream
 import java.net.InetSocketAddress
 import java.nio.charset.Charset
+import kotlin.test.assertEquals
 
 open class MockAutoDiscovery: IRpcAutoDiscovery {
     override suspend fun call(
@@ -40,21 +42,30 @@ class RpcServerTest {
             .setService("serviceA")
             .setMethod("methodA")
             .setArg(arg)
-            .setContext(Message.RequestContext.newBuilder()
-                .setPlayerId("playerA"))
+            .setContext(
+                Message.RequestContext.newBuilder()
+                    .setPlayerId("playerA")
+            )
             .build()
-        val read = ByteArrayOutputStream(1024)
-        withContext(Dispatchers.IO) {
-            inMsg.writeDelimitedTo(read)
-        }
-        val write = ByteChannel()
-        server.processMessages(ByteReadChannel(read.toByteArray()),
-            write,
-            SessionContext(InetSocketAddress.createUnresolved("", 0)))
-        Mockito.verify(autoDiscovery).call("serviceA",
+        val output = ByteChannel()
+        server.processMessages(
+            inMsg.toInputChannel(),
+            output,
+            SessionContext(InetSocketAddress.createUnresolved("", 0))
+        )
+        Mockito.verify(autoDiscovery).call(
+            "serviceA",
             "methodA",
             "aaa".toByteArray(Charset.defaultCharset()),
-            context)
+            context
+        )
+        val outMsg = withContext(Dispatchers.IO) {
+            Message.RpcResponse.parseDelimitedFrom(output.toInputStream())
+        }
+        assertEquals("bbb", outMsg.result.toString(Charset.defaultCharset()))
         Unit
     }
+
+
+
 }
