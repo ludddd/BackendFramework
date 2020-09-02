@@ -68,7 +68,7 @@ class RpcServerTest {
         )
     }
 
-    @ParameterizedTest
+    @ParameterizedTest(name = "{0}")
     @MethodSource
     fun exception(e: Exception) = runBlocking {
         val autoDiscovery = mockService {
