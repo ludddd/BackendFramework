@@ -1,6 +1,8 @@
 package com.ludd.player
 
+import com.ludd.rpc.RpcServer
 import io.ktor.util.*
+import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.ApplicationArguments
 import org.springframework.boot.ApplicationRunner
 import org.springframework.boot.autoconfigure.SpringBootApplication
@@ -15,11 +17,11 @@ class Application
 @ConditionalOnProperty(name = ["player_server.autostart"], havingValue = "true")
 @Component
 class ServerRunner: ApplicationRunner {
-    //@Autowired
-    //private lateinit var server: EchoServer
+    @Autowired
+    private lateinit var server: RpcServer
 
     override fun run(args: ApplicationArguments?) {
-        //server.waitTillTermination()
+        server.waitTillTermination()
     }
 }
 

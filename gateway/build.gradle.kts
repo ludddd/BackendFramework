@@ -22,6 +22,7 @@ dependencies {
     implementation("io.ktor:ktor-network:$ktor_version")
     testImplementation("io.ktor:ktor-server-tests:$ktor_version")
     implementation(project(":rpc"))
+    implementation(project(":mongo"))
     testImplementation("org.testcontainers:testcontainers:$test_containers_version")
     testImplementation("org.testcontainers:junit-jupiter:$test_containers_version")
     implementation("io.kubernetes:client-java:8.0.2")
