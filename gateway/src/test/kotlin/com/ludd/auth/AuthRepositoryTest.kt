@@ -23,7 +23,7 @@ private val logger = KotlinLogging.logger {}
 @Timeout(1, unit = TimeUnit.MINUTES)
 internal class AuthRepositoryTest {
 
-    private val echo = KGenericContainer("mongo:4.4.0-bionic")
+    private val mongo = KGenericContainer("mongo:4.4.0-bionic")
         .withExposedPorts(27017)
         .withStartupTimeout(Duration.ofMinutes(5))
 
@@ -33,8 +33,8 @@ internal class AuthRepositoryTest {
 
     @BeforeEach
     fun setUp() {
-        echo.start()
-        System.setProperty("mongodb.url", "mongodb://${echo.host}:${echo.getMappedPort(27017)}")
+        mongo.start()
+        System.setProperty("mongodb.url", "mongodb://${mongo.host}:${mongo.getMappedPort(27017)}")
         runBlocking {
             repository.ensureIndex()
         }
@@ -42,7 +42,7 @@ internal class AuthRepositoryTest {
 
     @AfterEach
     fun tearDown() {
-        echo.stop()
+        mongo.stop()
     }
 
     @Test
