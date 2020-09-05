@@ -9,7 +9,9 @@ import org.bson.Document
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.stereotype.Repository
 
-data class PlayerInfo(val name: String)
+data class PlayerInfo(val name: String) {
+    constructor(doc: Document) : this(doc.getString("name"))
+}
 
 @Repository
 class PlayerInfoRepository {
@@ -34,7 +36,7 @@ class PlayerInfoRepository {
 
     suspend fun getInfo(playerId: String): PlayerInfo {
         val doc = getPlayer(playerId).get("profile", Document::class.java)
-        return PlayerInfo(doc.getString("name"))
+        return PlayerInfo(doc)
     }
 }
 
