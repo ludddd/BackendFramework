@@ -10,7 +10,7 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty
 import org.springframework.boot.runApplication
 import org.springframework.stereotype.Component
 
-@SpringBootApplication(scanBasePackages = ["com.ludd.rpc", "com.ludd.player"])
+@SpringBootApplication(scanBasePackages = ["com.ludd.rpc", "com.ludd.player", "com.ludd.mongo"])
 class Application
 
 @KtorExperimentalAPI

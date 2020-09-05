@@ -17,7 +17,8 @@ class PlayerInfoService {
     @Suppress("RedundantSuspendModifier")
     @RpcMethod
     suspend fun setName(request: Player.SetNameRequest, sessionContext: SessionContext): Player.SetNameResponse {
-        repository.setName(sessionContext.playerId, request.name)
+        require(sessionContext.playerId != null) {"Player should be authorized"}
+        repository.setName(sessionContext.playerId!!, request.name)
         return Player.SetNameResponse.newBuilder().setCode(Player.SetNameResponse.Code.Ok).build()
     }
 }

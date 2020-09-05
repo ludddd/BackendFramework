@@ -18,12 +18,18 @@ plugins {
 projectConfig()
 
 val ktor_version: String by project
+val test_containers_version: String by project
 
 dependencies {
     implementation("io.ktor:ktor-server-netty:$ktor_version")
     implementation("io.ktor:ktor-network:$ktor_version")
     testImplementation("io.ktor:ktor-server-tests:$ktor_version")
     implementation(project(":rpc"))
+    implementation(project(":mongo"))
+    implementation("org.litote.kmongo:kmongo:4.1.0")
+    implementation("org.litote.kmongo:kmongo-coroutine:4.1.0")
+    testImplementation("org.testcontainers:testcontainers:$test_containers_version")
+    testImplementation("org.testcontainers:junit-jupiter:$test_containers_version")
 }
 
 idea.module {
