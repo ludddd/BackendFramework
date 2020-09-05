@@ -1,6 +1,7 @@
 package com.ludd.player
 
 import com.ludd.mongo.MongoDatabase
+import com.ludd.test_utils.KGenericContainer
 import kotlinx.coroutines.runBlocking
 import org.bson.Document
 import org.junit.jupiter.api.AfterEach
@@ -11,12 +12,8 @@ import org.junit.jupiter.api.Timeout
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.test.annotation.DirtiesContext
-import org.testcontainers.containers.GenericContainer
 import java.time.Duration
 import java.util.concurrent.TimeUnit
-
-//TODO: duplication with integrationTests
-class KGenericContainer(imageName: String) : GenericContainer<KGenericContainer>(imageName)
 
 @SpringBootTest
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_EACH_TEST_METHOD)    //TODO:  testcontainers changes port on each start so we had to reinit mongo connection

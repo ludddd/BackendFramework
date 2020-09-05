@@ -30,6 +30,7 @@ dependencies {
     implementation("org.litote.kmongo:kmongo-coroutine:4.1.0")
     testImplementation("org.testcontainers:testcontainers:$test_containers_version")
     testImplementation("org.testcontainers:junit-jupiter:$test_containers_version")
+    testImplementation(project(":test_utils"))
 }
 
 idea.module {

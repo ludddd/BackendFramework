@@ -1,4 +1,4 @@
-package com.ludd.test_utils
+package com.ludd.test_utils.test_utils
 
 import com.ludd.rpc.SessionContext
 import org.mockito.Mockito

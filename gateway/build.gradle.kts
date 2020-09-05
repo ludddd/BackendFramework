@@ -28,6 +28,7 @@ dependencies {
     implementation("io.kubernetes:client-java:8.0.2")
     implementation("org.litote.kmongo:kmongo:4.1.0")
     implementation("org.litote.kmongo:kmongo-coroutine:4.1.0")
+    testImplementation(project(":test_utils"))
 }
 
 idea.module {

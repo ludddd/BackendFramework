@@ -3,6 +3,7 @@
   <component name="CompilerConfiguration">
     <bytecodeTargetLevel>
       <module name="BackendFramework.rpc.testFixtures" target="11" />
+      <module name="BackendFramework.test_utils.testFixtures" target="11" />
     </bytecodeTargetLevel>
   </component>
 </project>

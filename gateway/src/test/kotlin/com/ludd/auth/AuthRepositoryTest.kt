@@ -1,5 +1,6 @@
 package com.ludd.auth
 
+import com.ludd.test_utils.KGenericContainer
 import kotlinx.coroutines.runBlocking
 import mu.KotlinLogging
 import org.junit.jupiter.api.*
@@ -7,14 +8,10 @@ import org.junit.jupiter.api.Assertions.assertEquals
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.test.annotation.DirtiesContext
-import org.testcontainers.containers.GenericContainer
 import java.time.Duration
 import java.util.concurrent.TimeUnit
 import kotlin.test.assertNotEquals
 import kotlin.test.assertNull
-
-//TODO: duplication with integrationTests
-class KGenericContainer(imageName: String) : GenericContainer<KGenericContainer>(imageName)
 
 private val logger = KotlinLogging.logger {}
 
