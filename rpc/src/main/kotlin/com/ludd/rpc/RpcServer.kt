@@ -9,17 +9,14 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.withContext
 import mu.KotlinLogging
-import org.springframework.beans.factory.annotation.Value
-import org.springframework.stereotype.Component
 import java.net.InetSocketAddress
 
 private val logger = KotlinLogging.logger {}
 
 @Suppress("EXPERIMENTAL_API_USAGE")
-@Component
-class RpcServer(private val autoDiscovery: IRpcAutoDiscovery,
+open class RpcServer(private val autoDiscovery: IRpcAutoDiscovery,
                 @Suppress("PLATFORM_CLASS_MAPPED_TO_KOTLIN")
-                @Value("\${server.port}") port: Integer): AbstractTcpServer(port.toInt()) {
+                port: Integer): AbstractTcpServer(port.toInt()) {
 
     @OptIn(KtorExperimentalAPI::class)
     override suspend fun processMessages(

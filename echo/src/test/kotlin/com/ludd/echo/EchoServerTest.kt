@@ -17,7 +17,7 @@ import org.springframework.test.annotation.DirtiesContext
 import java.nio.charset.Charset
 
 @KtorExperimentalAPI
-@SpringBootTest(properties=["server.port=9000", "echo_server.port=9000"])
+@SpringBootTest(properties=["echo_server.port=9000"])
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
 internal class EchoServerTest {
 

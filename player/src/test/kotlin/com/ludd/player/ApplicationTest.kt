@@ -1,11 +1,13 @@
 package com.ludd.player
 
+import com.ludd.rpc.IRpcAutoDiscovery
 import com.ludd.test_utils.KGenericContainer
 import mu.KotlinLogging
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.Timeout
+import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.test.annotation.DirtiesContext
 import java.time.Duration
@@ -36,5 +38,15 @@ class ApplicationTest {
 
     @Test
     fun runApplication() {
+    }
+
+    @Autowired
+    private lateinit var autoDiscovery: IRpcAutoDiscovery
+
+    @Test
+    fun startServer() {
+        @Suppress("DEPRECATION") val server = Server(autoDiscovery, Integer(9000))
+        server.start()
+        server.stop()
     }
 }
