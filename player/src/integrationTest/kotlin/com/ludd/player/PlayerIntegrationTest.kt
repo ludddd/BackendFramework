@@ -37,7 +37,7 @@ class PlayerIntegrationTest {
         mongo.start()
         val mongoHostPort = mongo.getMappedPort(27017)
         org.testcontainers.Testcontainers.exposeHostPorts(mongoHostPort)
-        player.withEnv("mongodb.url", "localhost:$mongoHostPort")
+        player.withEnv("mongodb.url", "mongodb://localhost:$mongoHostPort")
         player.start()
         logger.info("Container Id: ${player.containerId}")
         logger.info { player.containerInfo }

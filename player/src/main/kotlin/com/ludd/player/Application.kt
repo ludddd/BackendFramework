@@ -12,6 +12,8 @@ import org.springframework.boot.autoconfigure.SpringBootApplication
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty
 import org.springframework.boot.runApplication
 import org.springframework.stereotype.Component
+import javax.annotation.PostConstruct
+import javax.annotation.PreDestroy
 
 private val logger = KotlinLogging.logger {}
 
@@ -22,6 +24,17 @@ class Application
 class Server(@Autowired autoDiscovery: IRpcAutoDiscovery,
              @Suppress("PLATFORM_CLASS_MAPPED_TO_KOTLIN")
              @Value("\${server.port}") port: Integer): RpcServer(autoDiscovery, port)
+{
+    @PostConstruct
+    fun onPostConstruct() {
+        start()
+    }
+
+    @PreDestroy
+    fun onPreDestroy() {
+        super.stop()
+    }
+}
 
 @KtorExperimentalAPI
 @ConditionalOnProperty(name = ["player_server.autostart"], havingValue = "true")

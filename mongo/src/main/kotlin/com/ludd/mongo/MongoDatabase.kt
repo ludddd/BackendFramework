@@ -12,7 +12,7 @@ private val logger = KotlinLogging.logger {}
 class MongoDatabase {
 
     val database: CoroutineDatabase by lazy {
-        val mongoUrl = System.getProperty("mongodb.url")
+        val mongoUrl = System.getProperty("mongodb.url") ?: System.getenv("mongodb.url")
         logger.info("Connecting to mongo: $mongoUrl")
         val client = KMongo.createClient(mongoUrl).coroutine
         client.getDatabase("db")
