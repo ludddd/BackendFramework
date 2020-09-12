@@ -1,0 +1,19 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: player
+spec:
+  selector:
+    matchLabels:
+      app: player
+  minReadySeconds: 5
+  template:
+    metadata:
+      labels:
+        app: player
+    spec:
+      containers:
+        - name: player
+          image: ludd.player:0.1
+          ports:
+            - containerPort: 9001

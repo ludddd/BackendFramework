@@ -37,6 +37,7 @@ idea.module {
 tasks {
     named("integrationTest") {
         dependsOn(":echo:dockerBuildImage")
+        dependsOn(":player:dockerBuildImage")
         dependsOn("startKubernates")
     }
 }

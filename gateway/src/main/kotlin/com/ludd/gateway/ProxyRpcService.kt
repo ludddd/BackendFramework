@@ -55,6 +55,7 @@ class ProxyConnection(private val serviceName: String, private val channel: IRpc
         get() = channel.isClosed()
 
     suspend fun call(arg: ByteArray, sessionContext: SessionContext): ByteArray {
+        logger.info("Rerouting call to service $serviceName")
         val message = Message.InnerRpcRequest
             .newBuilder()
             .setService(serviceName)
