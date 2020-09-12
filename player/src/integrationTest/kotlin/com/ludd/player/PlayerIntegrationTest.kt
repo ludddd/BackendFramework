@@ -37,7 +37,7 @@ class PlayerIntegrationTest {
         mongo.start()
         val mongoHostPort = mongo.getMappedPort(27017)
         org.testcontainers.Testcontainers.exposeHostPorts(mongoHostPort)
-        player.withEnv("mongodb.url", "mongodb://localhost:$mongoHostPort")
+        player.withEnv("mongodb.url", "mongodb://host.testcontainers.internal:$mongoHostPort")
         player.start()
         logger.info("Container Id: ${player.containerId}")
         logger.info { player.containerInfo }
@@ -51,7 +51,7 @@ class PlayerIntegrationTest {
     }
 
     @Test
-    @Timeout(1, unit = TimeUnit.MINUTES)
+    @Timeout(10, unit = TimeUnit.MINUTES)
     fun directConnect() = runBlocking{
         val selectorManager = ActorSelectorManager(Dispatchers.IO)
         val port = player.firstMappedPort
