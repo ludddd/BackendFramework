@@ -1,13 +1,9 @@
 package com.ludd.rpc
 
-import io.ktor.network.selector.ActorSelectorManager
-import io.ktor.network.sockets.Socket
-import io.ktor.network.sockets.aSocket
-import io.ktor.network.sockets.openReadChannel
-import io.ktor.network.sockets.openWriteChannel
-import io.ktor.util.KtorExperimentalAPI
-import io.ktor.utils.io.ByteReadChannel
-import io.ktor.utils.io.ByteWriteChannel
+import io.ktor.network.selector.*
+import io.ktor.network.sockets.*
+import io.ktor.util.*
+import io.ktor.utils.io.*
 import kotlinx.coroutines.*
 import mu.KotlinLogging
 import java.util.concurrent.atomic.AtomicInteger
@@ -27,6 +23,7 @@ abstract class AbstractTcpServer(private val port:Int): CoroutineScope {
     private val sessionCount = AtomicInteger(0)
 
     fun start() {
+        logger.info("Starting tcp server at port: $port")
         serverJob = launch {
             val serverSocket = aSocket(selectorManager).tcp().bind(port = getPort())
             logger.info("${this@AbstractTcpServer.javaClass.name} listening at ${serverSocket.localAddress}")
