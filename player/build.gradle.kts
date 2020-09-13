@@ -53,6 +53,7 @@ tasks {
     }
 }
 
+//TODO: eliminate duplication with gateway and move it to kubernates module
 val startKubernates = tasks.create<Exec>("startKubernates") {
     executable = "kubectl"
     args("apply", "-f", "../kubernates")
