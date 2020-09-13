@@ -31,6 +31,18 @@ class ServiceA {
     suspend fun methodC(arg: ByteArray): ByteArray {
         return arg
     }
+
+    @Suppress("RedundantSuspendModifier")
+    @RpcMethod
+    suspend fun methodD(arg: ByteArray): CallResult {
+        return CallResult(arg, null)
+    }
+
+    @Suppress("RedundantSuspendModifier")
+    @RpcMethod
+    suspend fun methodError(arg: ByteArray): CallResult {
+        return CallResult(null, "error")
+    }
 }
 
 @SpringBootTest
@@ -56,8 +68,23 @@ class RpcMethodTest {
     fun callMethod() = runBlocking {
         val arg = "aaa".encodeToByteArray()
         val rez = rpcAutoDiscovery.call("serviceA","methodA", arg, mockSessionContext())
-        assertEquals(arg, rez)
+        assertEquals(arg, rez.result)
     }
+
+    @Test
+    fun callMethodReturningCallResult() = runBlocking {
+        val arg = "aaa".encodeToByteArray()
+        val rez = rpcAutoDiscovery.call("serviceA","methodD", arg, mockSessionContext())
+        assertEquals(arg, rez.result)
+    }
+
+    @Test
+    fun callMethodReturningError() = runBlocking {
+        val arg = "aaa".encodeToByteArray()
+        val rez = rpcAutoDiscovery.call("serviceA","methodError", arg, mockSessionContext())
+        assertEquals("error", rez.error)
+    }
+
 
     @Test
     fun callMissingMethod() = runBlocking {

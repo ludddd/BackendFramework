@@ -1,6 +1,7 @@
 package com.ludd.gateway
 
 import com.google.protobuf.ByteString
+import com.ludd.rpc.CallResult
 import com.ludd.rpc.IRpcService
 import com.ludd.rpc.SessionContext
 import com.ludd.rpc.to.Message
@@ -22,7 +23,7 @@ class ProxyRpcService(
     private val selectorManager = ActorSelectorManager(Dispatchers.IO)
     private var proxyConnection: ProxyConnection? = null
 
-    override suspend fun call(method: String, arg: ByteArray, sessionContext: SessionContext): ByteArray {
+    override suspend fun call(method: String, arg: ByteArray, sessionContext: SessionContext): CallResult {
         if (!isConnected()) {
             connect()
         }
@@ -54,7 +55,7 @@ class ProxyConnection(private val serviceName: String, private val channel: IRpc
     val isClosed: Boolean
         get() = channel.isClosed()
 
-    suspend fun call(arg: ByteArray, sessionContext: SessionContext): ByteArray {
+    suspend fun call(arg: ByteArray, sessionContext: SessionContext): CallResult {
         logger.info("Rerouting call to service $serviceName")
         val message = Message.InnerRpcRequest
             .newBuilder()
@@ -63,8 +64,8 @@ class ProxyConnection(private val serviceName: String, private val channel: IRpc
             .setContext(sessionContext.toRequestContext())
             .build()
         channel.write(message)
-        val response = channel.read()
-        return response.result.toByteArray()
+        val rez = channel.read()
+        return CallResult(rez.result.toByteArray(), rez.error)
     }
 }
 

@@ -25,7 +25,7 @@ private val logger = KotlinLogging.logger {}
 const val PARSE_METHOD_NAME = "parseFrom"
 
 interface IRpcAutoDiscovery {
-    suspend fun call(service: String, method: String, arg: ByteArray, sessionContext: SessionContext): ByteArray
+    suspend fun call(service: String, method: String, arg: ByteArray, sessionContext: SessionContext): CallResult
 }
 
 @Component
@@ -54,7 +54,7 @@ class RpcAutoDiscovery : IRpcAutoDiscovery {
         services.values.map { it.javaClass.kotlin.findAnnotation<RpcService>()!!.name to getRpcMethods(it) }.toMap()
     }
 
-    override suspend fun call(service: String, method: String, arg: ByteArray, sessionContext: SessionContext ): ByteArray {
+    override suspend fun call(service: String, method: String, arg: ByteArray, sessionContext: SessionContext ): CallResult {
         val serviceMap = methodMap[service] ?: throw NoServiceException(service)
         val func = serviceMap[method] ?: throw NoMethodException(service, method)
         val argType = func.method.parameters[1].type
@@ -68,8 +68,9 @@ class RpcAutoDiscovery : IRpcAutoDiscovery {
             }
         }
         return when (val rez = func.method.callSuspend(*args.toTypedArray())) {
-            is ByteArray -> rez
-            is AbstractMessage -> serializeMessage(rez)
+            is ByteArray -> CallResult(rez, null)
+            is AbstractMessage -> serializeMessage(rez) //TODO: what if serialized message has error string?
+            is CallResult -> rez
             else -> {
                 throw UnsupportedRpcMethodReturnType(service, method, rez?.javaClass)
             }
@@ -100,12 +101,12 @@ class RpcAutoDiscovery : IRpcAutoDiscovery {
         return rez
     }
 
-    private suspend fun serializeMessage(rez: AbstractMessage): ByteArray {
+    private suspend fun serializeMessage(rez: AbstractMessage): CallResult {
         val out = ByteArrayOutputStream()
         withContext(Dispatchers.IO) {
             rez.writeDelimitedTo(out)
         }
-        return out.toByteArray()
+        return CallResult(out.toByteArray(), null)
     }
 
     fun hasMethod(service: String, method: String) = methodMap[service]?.containsKey(method) ?: false
@@ -116,7 +117,7 @@ class RpcAutoDiscovery : IRpcAutoDiscovery {
                 method: String,
                 arg: ByteArray,
                 sessionContext: SessionContext
-            ): ByteArray {
+            ): CallResult {
                 return call(service, method, arg, sessionContext)
             }
         }

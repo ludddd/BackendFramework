@@ -36,7 +36,7 @@ open class RpcServer(private val autoDiscovery: IRpcAutoDiscovery,
                 inMessage.arg.toByteArray(),
                 inMessage.context.toSessionContext()
             )
-            responseBuilder.result = ByteString.copyFrom(rez)
+            responseBuilder.initFromCallResult(rez)
         } catch (e: Exception) {
             logger.error(e) {
                 "Error while calling service ${inMessage.service} method ${inMessage.method} with context ${inMessage.context}"
@@ -45,6 +45,16 @@ open class RpcServer(private val autoDiscovery: IRpcAutoDiscovery,
         }
         withContext(Dispatchers.IO) {
             responseBuilder.build().writeDelimitedTo(write.toOutputStream(coroutineContext[Job]))
+        }
+    }
+
+    private fun Message.RpcResponse.Builder.initFromCallResult(
+        rez: CallResult
+    ) {
+        if (rez.error != null) {
+            error = rez.error
+        } else {
+            result = ByteString.copyFrom(rez.result)
         }
     }
 

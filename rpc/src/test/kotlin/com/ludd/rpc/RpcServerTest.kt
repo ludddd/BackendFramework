@@ -18,13 +18,13 @@ import java.nio.charset.Charset
 import java.util.stream.Stream
 import kotlin.test.assertEquals
 
-open class MockAutoDiscovery(private val function: () -> ByteArray) : IRpcAutoDiscovery {
+open class MockAutoDiscovery(private val function: () -> CallResult) : IRpcAutoDiscovery {
     override suspend fun call(
         service: String,
         method: String,
         arg: ByteArray,
         sessionContext: SessionContext
-    ): ByteArray {
+    ): CallResult {
         return function()
     }
 }
@@ -35,7 +35,7 @@ class RpcServerTest {
     @Test
     fun processMessage() = runBlocking {
         val autoDiscovery = mockService {
-            "bbb".toByteArray(Charset.defaultCharset())
+            CallResult("bbb".toByteArray(Charset.defaultCharset()), null)
         }
         @Suppress("DEPRECATION")
         val server = RpcServer(autoDiscovery, Integer(0))
@@ -58,7 +58,7 @@ class RpcServerTest {
         Unit
     }
 
-    private fun mockService(function: () -> ByteArray) = Mockito.spy(MockAutoDiscovery(function))
+    private fun mockService(function: () -> CallResult) = Mockito.spy(MockAutoDiscovery(function))
 
     companion object {
         @JvmStatic
@@ -86,6 +86,25 @@ class RpcServerTest {
             Message.RpcResponse.parseDelimitedFrom(output.toInputStream())
         }
         assertEquals(e.toString(), outMsg.error)
+    }
+
+    @Test
+    fun errorInCallResult() = runBlocking {
+        val autoDiscovery = mockService {
+            CallResult(null, "error")
+        }
+        @Suppress("DEPRECATION")
+        val server = RpcServer(autoDiscovery, Integer(0))
+        val output = ByteChannel()
+        server.processMessages(
+            rpcRequest().toInputChannel(),
+            output,
+            SessionContext(InetSocketAddress.createUnresolved("", 0))
+        )
+        val outMsg = withContext(Dispatchers.IO) {
+            Message.RpcResponse.parseDelimitedFrom(output.toInputStream())
+        }
+        assertEquals("error", outMsg.error)
     }
 
     private fun rpcRequest(): Message.InnerRpcRequest {
