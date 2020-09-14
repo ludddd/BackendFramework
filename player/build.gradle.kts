@@ -49,25 +49,8 @@ docker {
 
 tasks {
     named("integrationTest") {
-        dependsOn("startKubernates")
+        dependsOn(":kubernates:startKubernates")
     }
-}
-
-//TODO: eliminate duplication with gateway and move it to kubernates module
-val startKubernates = tasks.create<Exec>("startKubernates") {
-    executable = "kubectl"
-    args("apply", "-f", "../kubernates")
-    group="kubernates"
-    dependsOn(":echo:dockerBuildImage")
-    dependsOn(":player:dockerBuildImage")
-    dependsOn(":gateway:dockerBuildImage")
-}
-
-val stopKubernates = tasks.create<Exec>("stopKubernates") {
-    executable = "kubectl"
-    args("delete", "all", "--all")  //TODO: delete not everything, but only those created in startKubernates
-    group="kubernates"
-    mustRunAfter("integrationTest")
 }
 
 

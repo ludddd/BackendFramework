@@ -37,8 +37,7 @@ idea.module {
 tasks {
     named("integrationTest") {
         dependsOn(":echo:dockerBuildImage")
-        dependsOn(":player:dockerBuildImage")
-        dependsOn("startKubernates")
+        dependsOn(":kubernates:startKubernates")
     }
 }
 
@@ -50,21 +49,6 @@ docker {
         images.set(setOf("ludd.gateway:0.1", "ludd.gateway:latest"))
         jvmArgs.set(listOf("-Xms256m", "-Xmx2048m", "-Djdk.tls.client.protocols=TLSv1.2"))
     }
-}
-
-val startKubernates = tasks.create<Exec>("startKubernates") {
-    executable = "kubectl"
-    args("apply", "-f", "../kubernates")
-    group="kubernates"
-    dependsOn(":echo:dockerBuildImage")
-    dependsOn("dockerBuildImage")
-}
-
-val stopKubernates = tasks.create<Exec>("stopKubernates") {
-    executable = "kubectl"
-    args("delete", "all", "--all")  //TODO: delete not everything, but only those created in startKubernates
-    group="kubernates"
-    mustRunAfter("integrationTest")
 }
 
 
