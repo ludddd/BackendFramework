@@ -1,5 +1,15 @@
 #!/bin/bash
-until mongo mongo-0.mongo --eval "print(\"waited for connection\")"
+until mongo mongo-0.mongo.default.svc.cluster.local --eval "print(\"waited for connection with mongo0\")"
+  do
+    echo 'waiting...'
+    sleep 1
+  done
+until mongo mongo-1.mongo.default.svc.cluster.local --eval "print(\"waited for connection with mongo1\")"
+  do
+    echo 'waiting...'
+    sleep 1
+  done
+until mongo mongo-2.mongo.default.svc.cluster.local --eval "print(\"waited for connection with mongo2\")"
   do
     echo 'waiting...'
     sleep 1
