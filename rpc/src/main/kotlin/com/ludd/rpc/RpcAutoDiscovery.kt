@@ -9,8 +9,10 @@ import org.springframework.context.ApplicationContext
 import org.springframework.stereotype.Component
 import java.io.ByteArrayOutputStream
 import java.io.InputStream
+import java.lang.reflect.InvocationTargetException
 import kotlin.reflect.KClass
 import kotlin.reflect.KFunction
+import kotlin.reflect.KParameter
 import kotlin.reflect.KType
 import kotlin.reflect.full.*
 import kotlin.reflect.jvm.jvmErasure
@@ -59,21 +61,51 @@ class RpcAutoDiscovery : IRpcAutoDiscovery {
         val func = serviceMap[method] ?: throw NoMethodException(service, method)
         val argType = func.method.parameters[1].type
         val args = listOf(func.arg) + func.method.parameters.drop(1).map {
-            val jvmErasure = it.type.jvmErasure
-            when {
-                jvmErasure.isSubclassOf(ByteArray::class) -> arg
-                jvmErasure.isSubclassOf(AbstractMessage::class) -> deserializeMessage(jvmErasure, arg)
-                jvmErasure.isSubclassOf(SessionContext::class) -> sessionContext
-                else -> throw UnsupportedRpcMethodArgumentType(service, method, argType)
-            }
+            convertArg(it, arg, sessionContext, service, method, argType)
         }
-        return when (val rez = func.method.callSuspend(*args.toTypedArray())) {
+        logger.debug("Calling method $method of service $service")
+        return try {
+            val rez = func.method.callSuspend(*args.toTypedArray())
+            logger.debug("method $method of service $service is called")
+            convertResult(rez, service, method)
+        } catch (e: InvocationTargetException) {
+            logger.error(e) {"Exception while calling method $method of service $service"}
+            CallResult(null, e.targetException.toString())
+        } catch (e: Exception) {
+            logger.error(e) {"Exception while calling method $method of service $service"}
+            CallResult(null, e.toString())
+        }
+    }
+
+    private suspend fun convertResult(
+        rez: Any?,
+        service: String,
+        method: String
+    ): CallResult {
+        return when (rez) {
             is ByteArray -> CallResult(rez, null)
             is AbstractMessage -> serializeMessage(rez) //TODO: what if serialized message has error string?
             is CallResult -> rez
             else -> {
                 throw UnsupportedRpcMethodReturnType(service, method, rez?.javaClass)
             }
+        }
+    }
+
+    private fun convertArg(
+        it: KParameter,
+        arg: ByteArray,
+        sessionContext: SessionContext,
+        service: String,
+        method: String,
+        argType: KType
+    ): Any? {
+        val jvmErasure = it.type.jvmErasure
+        return when {
+            jvmErasure.isSubclassOf(ByteArray::class) -> arg
+            jvmErasure.isSubclassOf(AbstractMessage::class) -> deserializeMessage(jvmErasure, arg)
+            jvmErasure.isSubclassOf(SessionContext::class) -> sessionContext
+            else -> throw UnsupportedRpcMethodArgumentType(service, method, argType)
         }
     }
 

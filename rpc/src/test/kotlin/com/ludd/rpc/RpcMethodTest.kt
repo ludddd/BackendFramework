@@ -43,6 +43,12 @@ class ServiceA {
     suspend fun methodError(arg: ByteArray): CallResult {
         return CallResult(null, "error")
     }
+
+    @Suppress("RedundantSuspendModifier")
+    @RpcMethod
+    suspend fun exception(arg: ByteArray): CallResult {
+        throw Exception("TestException")
+    }
 }
 
 @SpringBootTest
@@ -107,5 +113,12 @@ class RpcMethodTest {
         assertThrows<UnsupportedRpcMethodReturnType>{ runBlocking {
             rpcAutoDiscovery.call("serviceA","methodWrongReturn", "".encodeToByteArray(), mockSessionContext()) } }
         Unit
+    }
+
+    @Test
+    fun exception() = runBlocking {
+        val arg = "aaa".encodeToByteArray()
+        val rez = rpcAutoDiscovery.call("serviceA","exception", arg, mockSessionContext())
+        assertEquals("java.lang.Exception: TestException", rez.error)
     }
 }
