@@ -1,0 +1,6 @@
+syntax = "proto3";
+package com.ludd.rpc.to;
+
+message TestMessage {
+    string data = 1;
+}

@@ -1,7 +1,9 @@
 package com.ludd.rpc
 
 import com.ludd.test_util.mockSessionContext
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withContext
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
 import org.springframework.beans.factory.annotation.Autowired
@@ -48,6 +50,13 @@ class ServiceA {
     @RpcMethod
     suspend fun exception(arg: ByteArray): CallResult {
         throw Exception("TestException")
+    }
+
+    @Suppress("RedundantSuspendModifier")
+    @RpcMethod
+    suspend fun echo(request: com.ludd.rpc.to.Test.TestMessage, sessionContext: SessionContext): com.ludd.rpc.to.Test.TestMessage
+    {
+        return request
     }
 }
 
@@ -120,5 +129,15 @@ class RpcMethodTest {
         val arg = "aaa".encodeToByteArray()
         val rez = rpcAutoDiscovery.call("serviceA","exception", arg, mockSessionContext())
         assertEquals("java.lang.Exception: TestException", rez.error)
+    }
+
+    @Test
+    fun fullSignature() = runBlocking {
+        val arg = com.ludd.rpc.to.Test.TestMessage.newBuilder().setData("aaa").build()
+        val rez = rpcAutoDiscovery.call("serviceA","echo", arg.toByteArray(), mockSessionContext())
+        val outMsg = withContext(Dispatchers.IO) {
+            com.ludd.rpc.to.Test.TestMessage.parseDelimitedFrom(rez.result!!.inputStream())
+        }
+        assertEquals("aaa", outMsg.data)
     }
 }
