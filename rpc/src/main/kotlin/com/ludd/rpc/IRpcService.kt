@@ -22,6 +22,11 @@ data class CallResult(val result: ByteArray?, val error: String?) {
         return result1
     }
 
+    override fun toString(): String {
+        return "CallResult(result=${result?.contentToString()}, error=$error)"
+    }
+
+
 }
 
 interface IRpcService {

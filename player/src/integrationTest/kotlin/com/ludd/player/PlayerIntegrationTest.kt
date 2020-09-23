@@ -34,9 +34,9 @@ class PlayerIntegrationTest {
             .setName("aaa")
             .build()
 
-        val message = Message.InnerRpcRequest
+        val message = Message.RpcRequest
             .newBuilder()
-            .setService("playerInfo")
+            .setService("player")
             .setMethod("setName")
             .setArg(arg.toByteString())
             .build()
@@ -47,6 +47,7 @@ class PlayerIntegrationTest {
         val response = withContext(Dispatchers.IO) {
             Message.RpcResponse.parseDelimitedFrom(read.toInputStream())
         }
-        kotlin.test.assertEquals("Player should be authorized", response.error)
+        //TODO: replace with contains
+        kotlin.test.assertEquals("java.lang.IllegalArgumentException: Player should be authorized", response.error)
     }
 }

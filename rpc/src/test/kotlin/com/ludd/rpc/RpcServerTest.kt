@@ -17,6 +17,7 @@ import java.net.InetSocketAddress
 import java.nio.charset.Charset
 import java.util.stream.Stream
 import kotlin.test.assertEquals
+import kotlin.test.assertNull
 
 open class MockAutoDiscovery(private val function: () -> CallResult) : IRpcAutoDiscovery {
     override suspend fun call(
@@ -123,5 +124,18 @@ class RpcServerTest {
         val context = SessionContext(InetSocketAddress.createUnresolved("localhost", 0))
         context.authenticate("playerA")
         return context
+    }
+
+    @Test
+    fun sessionContextSerialization() = runBlocking {
+        val msg = Message.InnerRpcRequest.newBuilder()
+            .setService("serviceA")
+            .setMethod("methodA")
+            .setArg(ByteString.copyFrom("aaa", Charset.defaultCharset()))
+            .setContext(
+                Message.RequestContext.newBuilder()
+            )
+            .build()
+        assertNull(msg.context.toSessionContext().playerId)
     }
 }

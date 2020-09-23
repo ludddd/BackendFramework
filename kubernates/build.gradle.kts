@@ -1,5 +1,3 @@
-import com.ludd.backend_framework.projectConfig
-
 repositories {
     mavenCentral()
     maven { url = uri("https://kotlin.bintray.com/ktor") }
@@ -10,8 +8,6 @@ plugins {
 
 group = "com.ludd"
 version = "0.0.1"
-
-projectConfig()
 
 dependencies {
 }

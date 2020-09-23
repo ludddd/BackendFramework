@@ -27,7 +27,7 @@ open class RpcServer(private val autoDiscovery: IRpcAutoDiscovery,
         val inMessage = withContext(Dispatchers.IO) {
             Message.InnerRpcRequest.parseDelimitedFrom(read.toInputStream(coroutineContext[Job]))
         }
-
+        logger.debug("Rpc call ${inMessage.service}:${inMessage.method} is received")
         val responseBuilder = Message.RpcResponse.newBuilder()
         try {
             val rez = autoDiscovery.call(
@@ -43,8 +43,12 @@ open class RpcServer(private val autoDiscovery: IRpcAutoDiscovery,
             }
             responseBuilder.error = e.toString()
         }
+        if (responseBuilder.error != null) {
+            logger.debug("Responding to ${inMessage.service}:${inMessage.method} call with error: ${responseBuilder.error}")
+        }
         withContext(Dispatchers.IO) {
             responseBuilder.build().writeDelimitedTo(write.toOutputStream(coroutineContext[Job]))
+            write.flush()
         }
     }
 
@@ -52,16 +56,19 @@ open class RpcServer(private val autoDiscovery: IRpcAutoDiscovery,
         rez: CallResult
     ) {
         if (rez.error != null) {
+            logger.debug("CallResult has error: ${rez.error}")
             error = rez.error
         } else {
             result = ByteString.copyFrom(rez.result)
         }
     }
+}
 
-    private fun Message.RequestContext.toSessionContext(): SessionContext {
-        //TODO: fix inet address
-        val requestContext = SessionContext(InetSocketAddress.createUnresolved("localhost", 0))
+fun Message.RequestContext.toSessionContext(): SessionContext {
+    //TODO: fix inet address
+    val requestContext = SessionContext(InetSocketAddress.createUnresolved("localhost", 0))
+    if (!playerIdBytes.isEmpty) {
         requestContext.authenticate(playerId)
-        return requestContext
     }
+    return requestContext
 }

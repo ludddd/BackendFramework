@@ -119,9 +119,9 @@ class RpcMethodTest {
 
     @Test
     fun unsupportedMethodReturnType() = runBlocking {
-        assertThrows<UnsupportedRpcMethodReturnType>{ runBlocking {
-            rpcAutoDiscovery.call("serviceA","methodWrongReturn", "".encodeToByteArray(), mockSessionContext()) } }
-        Unit
+        val rez = rpcAutoDiscovery.call("serviceA","methodWrongReturn", "".encodeToByteArray(), mockSessionContext())
+        assertEquals("com.ludd.rpc.UnsupportedRpcMethodReturnType: Method methodWrongReturn in service serviceA returns object of unsupported class class java.lang.Integer",
+            rez.error)
     }
 
     @Test

@@ -66,7 +66,6 @@ class RpcAutoDiscovery : IRpcAutoDiscovery {
         logger.debug("Calling method $method of service $service")
         return try {
             val rez = func.method.callSuspend(*args.toTypedArray())
-            logger.debug("method $method of service $service is called")
             convertResult(rez, service, method)
         } catch (e: InvocationTargetException) {
             logger.error(e) {"Exception while calling method $method of service $service"}
