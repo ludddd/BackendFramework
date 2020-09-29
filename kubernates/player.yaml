@@ -12,6 +12,12 @@ spec:
       labels:
         app: player
     spec:
+      initContainers:
+        - name: wait-for-replica-set
+          image: mongo:latest
+          command: ['sh', '-c',
+              'until mongo --host mongo-0.mongo.default.svc.cluster.local --eval "rs.status().ok";
+          do echo waiting for database; sleep 1; done;']
       containers:
         - name: player
           image: ludd.player:0.1
