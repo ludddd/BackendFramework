@@ -1,2 +1,1 @@
 - fix echo integration test - it works with kubernates mongo due to testcontainer mongo runned before
-- gradle: wait before kubernates cluster fully starts
