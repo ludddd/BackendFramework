@@ -26,6 +26,4 @@ val stopKubernates = tasks.create<Exec>("stopKubernates") {
     executable = "kubectl"
     args("delete", "all", "--all")  //TODO: delete not everything, but only those created in startKubernates
     group="kubernates"
-    mustRunAfter(":player:integrationTest") //TODO: move to other modules gradle files
-    mustRunAfter(":gateway:integrationTest")
 }

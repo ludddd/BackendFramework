@@ -50,6 +50,7 @@ docker {
 tasks {
     named("integrationTest") {
         dependsOn(":kubernates:startKubernates")
+        finalizedBy(":kubernates:stopKubernates")
     }
 }
 

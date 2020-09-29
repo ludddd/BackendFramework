@@ -38,6 +38,7 @@ tasks {
     named("integrationTest") {
         dependsOn(":echo:dockerBuildImage")
         dependsOn(":kubernates:startKubernates")
+        finalizedBy(":kubernates:stopKubernates")
     }
 }
 
