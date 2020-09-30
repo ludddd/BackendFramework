@@ -3,14 +3,8 @@ package com.ludd.player
 import com.ludd.auth.to.Auth
 import com.ludd.player.to.Player
 import com.ludd.rpc.to.Message
-import io.ktor.network.selector.*
-import io.ktor.network.sockets.*
 import io.ktor.util.*
-import io.ktor.utils.io.*
-import io.ktor.utils.io.jvm.javaio.*
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
-import kotlinx.coroutines.withContext
 import mu.KotlinLogging
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.Timeout
@@ -27,29 +21,15 @@ class PlayerIntegrationTest {
     @Test
     @Timeout(1, unit = TimeUnit.MINUTES)
     fun notAuthorizedPlayer() = runBlocking{
-        val selectorManager = ActorSelectorManager(Dispatchers.IO)
-        val socket = aSocket(selectorManager).tcp().connect("localhost", port = 30000)
-        val write = socket.openWriteChannel(autoFlush = true)
-        val read = socket.openReadChannel()
+        val client = TestClient()
 
         val arg = Player.SetNameRequest
             .newBuilder()
             .setName("aaa")
             .build()
+        client.sendRpc("player", "setName", arg)
 
-        val message = Message.RpcRequest
-            .newBuilder()
-            .setService("player")
-            .setMethod("setName")
-            .setArg(arg.toByteString())
-            .build()
-        withContext(Dispatchers.IO) {
-            message.writeDelimitedTo(write.toOutputStream())
-        }
-
-        val response = withContext(Dispatchers.IO) {
-            Message.RpcResponse.parseDelimitedFrom(read.toInputStream())
-        }
+        val response = client.receive(Message.RpcResponse::parseDelimitedFrom)
         //TODO: replace with contains
         assertEquals("java.lang.IllegalArgumentException: Player should be authorized", response.error)
     }
@@ -57,53 +37,27 @@ class PlayerIntegrationTest {
     @Test
     @Timeout(1, unit = TimeUnit.MINUTES)
     fun setName() = runBlocking{
-        val selectorManager = ActorSelectorManager(Dispatchers.IO)
-        val socket = aSocket(selectorManager).tcp().connect("localhost", port = 30000)
-        val write = socket.openWriteChannel(autoFlush = true)
-        val read = socket.openReadChannel()
+        val client = TestClient()
 
-        registerPlayer(write, read)
+        registerPlayer(client)
 
         val arg = Player.SetNameRequest
             .newBuilder()
             .setName("aaa")
             .build()
-
-        val message = Message.RpcRequest
-            .newBuilder()
-            .setService("player")
-            .setMethod("setName")
-            .setArg(arg.toByteString())
-            .build()
-        withContext(Dispatchers.IO) {
-            message.writeDelimitedTo(write.toOutputStream())
-        }
-
-        val response = withContext(Dispatchers.IO) {
-            val msg = Message.RpcResponse.parseDelimitedFrom(read.toInputStream())
-            Player.SetNameResponse.parseDelimitedFrom(msg.result.newInput())
-        }
+        client.sendRpc("player", "setName", arg)
+        val response = client.receiveRpc(Player.SetNameResponse::parseDelimitedFrom)
         assertEquals(Player.SetNameResponse.Code.Ok, response.code)
     }
 
-    private suspend fun registerPlayer(write: ByteWriteChannel, read: ByteReadChannel) {
+    private suspend fun registerPlayer(client: TestClient) {
         val arg = Auth.RegisterRequest.newBuilder()
             .setType(Auth.IdType.DEVICE_ID)
             .setId("testPlayer")
             .build()
-        val request = Message.RpcRequest
-            .newBuilder()
-            .setService("auth")
-            .setMethod("register")
-            .setArg(arg.toByteString())
-            .build()
-        withContext(Dispatchers.IO) {
-            request.writeDelimitedTo(write.toOutputStream())
-        }
-        val response = withContext(Dispatchers.IO) {
-            val msg = Message.RpcResponse.parseDelimitedFrom(read.toInputStream())
-            Auth.RegisterResponse.parseDelimitedFrom(msg.result.newInput())
-        }
+        client.sendRpc("auth", "register", arg)
+        val response = client.receiveRpc(Auth.RegisterResponse::parseDelimitedFrom)
         assertEquals(Auth.RegisterResponse.Code.Ok, response.code)
     }
 }
+
