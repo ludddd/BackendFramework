@@ -2,13 +2,11 @@ package com.ludd.gateway
 
 import com.google.protobuf.ByteString
 import com.ludd.rpc.to.Message
-import io.ktor.network.selector.ActorSelectorManager
-import io.ktor.network.sockets.aSocket
-import io.ktor.network.sockets.openReadChannel
-import io.ktor.network.sockets.openWriteChannel
-import io.ktor.util.KtorExperimentalAPI
-import io.ktor.utils.io.jvm.javaio.toInputStream
-import io.ktor.utils.io.jvm.javaio.toOutputStream
+import com.ludd.test_utils.KGenericContainer
+import io.ktor.network.selector.*
+import io.ktor.network.sockets.*
+import io.ktor.util.*
+import io.ktor.utils.io.jvm.javaio.*
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
@@ -17,13 +15,10 @@ import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.Timeout
-import org.testcontainers.containers.GenericContainer
 import org.testcontainers.junit.jupiter.Testcontainers
 import java.nio.charset.Charset
 import java.time.Duration
 import java.util.concurrent.TimeUnit
-
-class KGenericContainer(imageName: String) : GenericContainer<KGenericContainer>(imageName)
 
 private val logger = KotlinLogging.logger {}
 

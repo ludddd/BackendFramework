@@ -1,5 +1,6 @@
 package com.ludd.auth
 
+import com.ludd.test_utils.KGenericContainer
 import kotlinx.coroutines.runBlocking
 import mu.KotlinLogging
 import org.junit.jupiter.api.*
@@ -7,14 +8,10 @@ import org.junit.jupiter.api.Assertions.assertEquals
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.test.annotation.DirtiesContext
-import org.testcontainers.containers.GenericContainer
 import java.time.Duration
 import java.util.concurrent.TimeUnit
 import kotlin.test.assertNotEquals
 import kotlin.test.assertNull
-
-//TODO: duplication with integrationTests
-class KGenericContainer(imageName: String) : GenericContainer<KGenericContainer>(imageName)
 
 private val logger = KotlinLogging.logger {}
 
@@ -23,7 +20,7 @@ private val logger = KotlinLogging.logger {}
 @Timeout(1, unit = TimeUnit.MINUTES)
 internal class AuthRepositoryTest {
 
-    private val echo = KGenericContainer("mongo:4.4.0-bionic")
+    private val mongo = KGenericContainer("mongo:4.4.0-bionic")
         .withExposedPorts(27017)
         .withStartupTimeout(Duration.ofMinutes(5))
 
@@ -33,8 +30,8 @@ internal class AuthRepositoryTest {
 
     @BeforeEach
     fun setUp() {
-        echo.start()
-        System.setProperty("mongodb.url", "mongodb://${echo.host}:${echo.getMappedPort(27017)}")
+        mongo.start()
+        System.setProperty("mongodb.url", "mongodb://${mongo.host}:${mongo.getMappedPort(27017)}")
         runBlocking {
             repository.ensureIndex()
         }
@@ -42,7 +39,7 @@ internal class AuthRepositoryTest {
 
     @AfterEach
     fun tearDown() {
-        echo.stop()
+        mongo.stop()
     }
 
     @Test

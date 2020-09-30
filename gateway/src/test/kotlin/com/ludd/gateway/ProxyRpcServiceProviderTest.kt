@@ -107,7 +107,7 @@ internal class ProxyRpcServiceProviderTest {
         val proxy = ProxyConnection("test", channel)
         val context = SessionContext(InetSocketAddress(0))
         context.authenticate("playerA")
-        proxy.call("aaa".toByteArray(Charset.defaultCharset()), context)
+        proxy.call("funcA", "aaa".toByteArray(Charset.defaultCharset()), context)
         assertEquals("playerA", channel.messageWritten?.context?.playerId)
     }
 }

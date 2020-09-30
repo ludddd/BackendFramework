@@ -35,3 +35,12 @@ spec:
           ports:
             - containerPort: 27017
               name: mongo
+          readinessProbe:
+            exec:
+              command:
+                - mongo
+                - --eval
+                - db.adminCommand('ping')
+            initialDelaySeconds: 5
+            timeoutSeconds: 5
+            periodSeconds: 10

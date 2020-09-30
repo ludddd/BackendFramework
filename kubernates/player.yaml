@@ -1,0 +1,28 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: player
+spec:
+  selector:
+    matchLabels:
+      app: player
+  minReadySeconds: 5
+  template:
+    metadata:
+      labels:
+        app: player
+    spec:
+      initContainers:
+        - name: wait-for-replica-set
+          image: mongo:latest
+          command: ['sh', '-c',
+              'until mongo --host mongo-0.mongo.default.svc.cluster.local --eval "rs.status().ok";
+          do echo waiting for database; sleep 1; done;']
+      containers:
+        - name: player
+          image: ludd.player:0.1
+          ports:
+            - containerPort: 9001
+          env:
+            - name: mongodb.url
+              value: "mongodb://mongo-0.mongo.default.svc.cluster.local,mongo-1.mongo.default.svc.cluster.local,mongo-2.mongo.default.svc.cluster.local/?replicaSet=rs0"

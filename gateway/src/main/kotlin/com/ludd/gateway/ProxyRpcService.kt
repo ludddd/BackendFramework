@@ -1,6 +1,7 @@
 package com.ludd.gateway
 
 import com.google.protobuf.ByteString
+import com.ludd.rpc.CallResult
 import com.ludd.rpc.IRpcService
 import com.ludd.rpc.SessionContext
 import com.ludd.rpc.to.Message
@@ -22,12 +23,12 @@ class ProxyRpcService(
     private val selectorManager = ActorSelectorManager(Dispatchers.IO)
     private var proxyConnection: ProxyConnection? = null
 
-    override suspend fun call(method: String, arg: ByteArray, sessionContext: SessionContext): ByteArray {
+    override suspend fun call(method: String, arg: ByteArray, sessionContext: SessionContext): CallResult {
         if (!isConnected()) {
             connect()
         }
 
-        return proxyConnection!!.call(arg, sessionContext)
+        return proxyConnection!!.call(method, arg, sessionContext)
     }
 
     private fun isConnected() = proxyConnection != null && !proxyConnection!!.isClosed
@@ -54,16 +55,20 @@ class ProxyConnection(private val serviceName: String, private val channel: IRpc
     val isClosed: Boolean
         get() = channel.isClosed()
 
-    suspend fun call(arg: ByteArray, sessionContext: SessionContext): ByteArray {
+    suspend fun call(method: String, arg: ByteArray, sessionContext: SessionContext): CallResult {
+        logger.info("Rerouting call to service $serviceName")
         val message = Message.InnerRpcRequest
             .newBuilder()
             .setService(serviceName)
+            .setMethod(method)
             .setArg(ByteString.copyFrom(arg))
             .setContext(sessionContext.toRequestContext())
             .build()
         channel.write(message)
-        val response = channel.read()
-        return response.result.toByteArray()
+        val rez = channel.read()
+        logger.debug("Response from service $serviceName is received")
+        if (rez.error != null) logger.debug("with error: ${rez.error}")
+        return CallResult(rez.result.toByteArray(), rez.error)
     }
 }
 

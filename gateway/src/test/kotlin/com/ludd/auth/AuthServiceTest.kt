@@ -1,7 +1,7 @@
 package com.ludd.auth
 
 import com.ludd.auth.to.Auth
-import com.ludd.test_utils.mockSessionContext
+import com.ludd.test_utils.test_utils.mockSessionContext
 import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.Test
 import org.mockito.Mockito

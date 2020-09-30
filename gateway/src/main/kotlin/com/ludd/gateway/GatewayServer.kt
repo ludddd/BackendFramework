@@ -5,11 +5,9 @@ import com.ludd.rpc.AbstractTcpServer
 import com.ludd.rpc.IRpcServiceProvider
 import com.ludd.rpc.SessionContext
 import com.ludd.rpc.to.Message
-import io.ktor.util.KtorExperimentalAPI
-import io.ktor.utils.io.ByteReadChannel
-import io.ktor.utils.io.ByteWriteChannel
-import io.ktor.utils.io.jvm.javaio.toInputStream
-import io.ktor.utils.io.jvm.javaio.toOutputStream
+import io.ktor.util.*
+import io.ktor.utils.io.*
+import io.ktor.utils.io.jvm.javaio.*
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.withContext
@@ -51,10 +49,21 @@ class GatewayServer(@Value("\${gateway.tcp_server.port}") port: Integer):
         message: Message.RpcRequest,
         sessionContext: SessionContext
     ): Message.RpcResponse {
-        logger.info("message for service ${message.service} received")
-        val service = serviceProvider.get(message.service)
-        val result = service.call(message.method, message.arg.toByteArray(), sessionContext)
-        return Message.RpcResponse.newBuilder().setResult(ByteString.copyFrom(result)).build()
+        val responseBuilder = Message.RpcResponse.newBuilder()
+        try {
+            logger.info("message for service ${message.service} received")
+            val service = serviceProvider.get(message.service)
+            val result = service.call(message.method, message.arg.toByteArray(), sessionContext)
+            responseBuilder.result = ByteString.copyFrom(result.result)
+            responseBuilder.error = result.error
+            if (result.error != null) {
+                logger.debug("Error received from service ${message.service}: ${result.error}")
+            }
+        } catch (e: Exception) {
+            logger.error(e) {"Error while calling service ${message.service} method ${message.method} with context $sessionContext"}
+            responseBuilder.error = e.toString()
+        }
+        return responseBuilder.build()
     }
 
     @PostConstruct
