@@ -6,6 +6,8 @@ import com.ludd.rpc.to.Message
 import io.ktor.util.*
 import kotlinx.coroutines.runBlocking
 import mu.KotlinLogging
+import org.hamcrest.MatcherAssert.assertThat
+import org.hamcrest.core.StringContains
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.Timeout
 import org.testcontainers.junit.jupiter.Testcontainers
@@ -30,8 +32,7 @@ class PlayerIntegrationTest {
         client.sendRpc("player", "setName", arg)
 
         val response = client.receive(Message.RpcResponse::parseDelimitedFrom)
-        //TODO: replace with contains
-        assertEquals("java.lang.IllegalArgumentException: Player should be authorized", response.error)
+        assertThat(response.error, StringContains.containsString("Player should be authorized"))
     }
 
     @Test
