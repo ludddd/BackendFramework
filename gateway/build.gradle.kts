@@ -18,6 +18,7 @@ val ktor_version: String by project
 val test_containers_version: String by project
 
 dependencies {
+    implementation(project(":gateway:gateway_rpc"))
     implementation("io.ktor:ktor-server-netty:$ktor_version")
     implementation("io.ktor:ktor-network:$ktor_version")
     testImplementation("io.ktor:ktor-server-tests:$ktor_version")

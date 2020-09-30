@@ -2,6 +2,10 @@
 <project version="4">
   <component name="CompilerConfiguration">
     <bytecodeTargetLevel>
+      <module name="BackendFramework.gateway.rpc" target="11" />
+      <module name="BackendFramework.gateway.rpc.integrationTest" target="11" />
+      <module name="BackendFramework.gateway.rpc.main" target="11" />
+      <module name="BackendFramework.gateway.rpc.test" target="11" />
       <module name="BackendFramework.kubernates.integrationTest" target="11" />
       <module name="BackendFramework.kubernates.main" target="11" />
       <module name="BackendFramework.kubernates.test" target="11" />

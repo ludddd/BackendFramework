@@ -1,5 +1,5 @@
 rootProject.name = "BackendFramework"
-include("gateway")
+include("gateway:gateway_rpc")
 include("echo_grpc")
 include("rpc")
 include("echo")

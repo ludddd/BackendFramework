@@ -32,6 +32,7 @@ dependencies {
     testImplementation("org.testcontainers:junit-jupiter:$test_containers_version")
     testImplementation(project(":test_utils"))
     implementation("com.fasterxml.jackson.module:jackson-module-kotlin:2.11.+")
+    testImplementation(project(":gateway:gateway_rpc"))
 }
 
 idea.module {
