@@ -1,7 +1,6 @@
 package com.ludd.mongo
 
 import com.ludd.test_utils.KGenericContainer
-import com.mongodb.client.model.Filters
 import kotlinx.coroutines.runBlocking
 import org.bson.Document
 import org.bson.types.ObjectId
@@ -15,10 +14,6 @@ import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.test.annotation.DirtiesContext
 import java.time.Duration
 import java.util.concurrent.TimeUnit
-
-class OptimisticLockException: Exception() {
-
-}
 
 @SpringBootTest
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_EACH_TEST_METHOD)    //TODO:  testcontainers changes port on each start so we had to reinit mongo connection
@@ -107,23 +102,6 @@ class OptimisticLockTest {
                 doc.append("fieldA", "B")
             }
         }
-    }
-
-    suspend fun CoroutineCollection<Document>.lock(id: ObjectId, block: (doc: Document) -> Unit) {
-        for (i in 0..100) {
-            val doc: Document = findOneById(id)!!
-            block(doc)
-            var filter = Filters.eq("_id", id)
-            if (doc.containsKey("version")) {
-                filter = Filters.and(filter, Filters.eq("version", doc["version"]))
-                doc["version"] = doc.getInteger("version") + 1
-            } else {
-                doc.append("version", 0)
-                filter = Filters.and(filter, Filters.not(Filters.exists("version")))
-            }
-            if (replaceOne(filter, doc).matchedCount == 1L) return
-        }
-        throw OptimisticLockException()
     }
 }
 
