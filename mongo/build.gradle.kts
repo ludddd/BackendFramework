@@ -29,6 +29,7 @@ tasks.getByName<Jar>("jar") {
 }
 
 val ktor_version: String by project
+val test_containers_version: String by project
 
 dependencies {
     implementation("io.ktor:ktor-server-netty:$ktor_version")
@@ -37,6 +38,9 @@ dependencies {
     implementation("org.reflections:reflections:0.9.12")
     implementation("org.litote.kmongo:kmongo:4.1.0")
     implementation("org.litote.kmongo:kmongo-coroutine:4.1.0")
+    testImplementation(project(":test_utils"))
+    testImplementation("org.testcontainers:testcontainers:$test_containers_version")
+    testImplementation("org.testcontainers:junit-jupiter:$test_containers_version")
 }
 
 idea.module {
