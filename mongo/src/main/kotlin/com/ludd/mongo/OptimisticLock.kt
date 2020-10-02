@@ -5,10 +5,12 @@ import org.bson.Document
 import org.bson.types.ObjectId
 import org.litote.kmongo.coroutine.CoroutineCollection
 
-class OptimisticLockException: Exception()
+const val MAX_LOCK_TRY = 100
+
+class OptimisticLockException(msg: String): Exception(msg)
 
 suspend fun CoroutineCollection<Document>.lock(id: ObjectId, block: (doc: Document) -> Unit) {
-    for (i in 0..100) {
+    for (i in 0..MAX_LOCK_TRY) {
         val doc: Document = findOneById(id)!!
         block(doc)
         var filter = Filters.eq("_id", id)
@@ -21,5 +23,5 @@ suspend fun CoroutineCollection<Document>.lock(id: ObjectId, block: (doc: Docume
         }
         if (replaceOne(filter, doc).matchedCount == 1L) return
     }
-    throw OptimisticLockException()
+    throw OptimisticLockException("Failed to acquire lock for document $id in collection $namespace")
 }
