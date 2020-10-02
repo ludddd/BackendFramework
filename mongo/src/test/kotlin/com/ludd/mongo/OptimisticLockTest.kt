@@ -7,6 +7,8 @@ import org.bson.Document
 import org.bson.types.ObjectId
 import org.junit.jupiter.api.*
 import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.params.ParameterizedTest
+import org.junit.jupiter.params.provider.ValueSource
 import org.litote.kmongo.coroutine.CoroutineCollection
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
@@ -70,11 +72,7 @@ class OptimisticLockTest {
         Assertions.assertThrows(OptimisticLockException::class.java) {
             runBlocking {
                 collection.lock(id) {
-                    runBlocking {
-                        collection.lock(id) {doc ->
-                            doc.append("fieldA", "B")
-                        }
-                    }
+                    conflictingLock(id)
                     it.append("fieldA", "A")
                 }
             }
@@ -85,46 +83,30 @@ class OptimisticLockTest {
         Unit
     }
 
-    @Test
-    fun lock_with_2nd_try() = runBlocking {
+    @ParameterizedTest(name = "{0}")
+    @ValueSource(ints = [2, 3])
+    fun lock_with_n_tries(tryCount: Int) = runBlocking {
         val id = collection.insertOne(Document()).insertedId!!.asObjectId().value
         var nTry = 0
         collection.lock(id) {
-            if (nTry < 1) {
-                runBlocking {
-                    collection.lock(id) { doc ->
-                        doc.append("fieldA", "B")
-                    }
-                }
+            if (nTry < tryCount) {
+                conflictingLock(id)
                 nTry++
             }
             it.append("fieldA", "A")
         }
         val updatedDoc = collection.findOneById(id)!!
-        assertEquals(1, updatedDoc.getInteger("version"))
+        assertEquals(tryCount, updatedDoc.getInteger("version"))
         assertEquals("A", updatedDoc.getString("fieldA"))
         Unit
     }
 
-    @Test
-    fun lock_with_3rd_try() = runBlocking {
-        val id = collection.insertOne(Document()).insertedId!!.asObjectId().value
-        var nTry = 0
-        collection.lock(id) {
-            if (nTry < 2) {
-                runBlocking {
-                    collection.lock(id) { doc ->
-                        doc.append("fieldA", "B")
-                    }
-                }
-                nTry++
+    private fun conflictingLock(id: ObjectId) {
+        runBlocking {
+            collection.lock(id) { doc ->
+                doc.append("fieldA", "B")
             }
-            it.append("fieldA", "A")
         }
-        val updatedDoc = collection.findOneById(id)!!
-        assertEquals(2, updatedDoc.getInteger("version"))
-        assertEquals("A", updatedDoc.getString("fieldA"))
-        Unit
     }
 
     suspend fun CoroutineCollection<Document>.lock(id: ObjectId, block: (doc: Document) -> Unit) {
