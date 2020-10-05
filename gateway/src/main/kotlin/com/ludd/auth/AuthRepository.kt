@@ -16,6 +16,11 @@ data class PlayerId(val type: String, val name: String)
 data class PlayerIds(val ids: MutableList<PlayerId>) {
     @Suppress("unused")
     constructor(): this(mutableListOf())
+
+    fun add(id: PlayerId) {
+        ids.removeIf { it.type == id.type }
+        ids.add(id)
+    }
 }
 const val PlayerIdsField = "playerIds"
 
@@ -51,7 +56,7 @@ class AuthRepository: IAuthRepository {
 
     private fun addPlayerId(doc: Document, type: String, id: String) {
         val ids = SubDocument(doc, PlayerIdsField, PlayerIds::class.java)
-        ids.value.ids.add(PlayerId(type, id)) //TODO: duplicate id type?
+        ids.value.add(PlayerId(type, id))
         ids.save()
     }
 

@@ -3,6 +3,8 @@ package com.ludd.auth
 import com.ludd.test_utils.KGenericContainer
 import kotlinx.coroutines.runBlocking
 import mu.KotlinLogging
+import org.hamcrest.MatcherAssert.assertThat
+import org.hamcrest.Matchers
 import org.junit.jupiter.api.*
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.springframework.beans.factory.annotation.Autowired
@@ -55,6 +57,16 @@ internal class AuthRepositoryTest {
         repository.addPlayer("deviceId", "userC")
         assertEquals(playerB, repository.findPlayer("deviceId", "userB"))
         assertNotEquals(playerA, playerB)
+    }
+
+    @Test
+    fun overwriteId() = runBlocking {
+        val ids = PlayerIds()
+        ids.add(PlayerId("deviceId", "A"))
+        ids.add(PlayerId("deviceId", "B"))
+        assertThat(ids.ids, Matchers.hasSize(1))
+        assertEquals("B", ids.ids[0].name)
+        Unit
     }
 
     @Test
