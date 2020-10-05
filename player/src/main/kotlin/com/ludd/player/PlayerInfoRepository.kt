@@ -1,16 +1,19 @@
 package com.ludd.player
 
-import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.ludd.mongo.MongoDatabase
+import com.ludd.mongo.SubDocument
 import com.ludd.mongo.lock
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
 import org.bson.Document
 import org.bson.types.ObjectId
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.stereotype.Repository
 
-data class PlayerInfo(val name: String)
+data class PlayerInfo(var name: String) {
+    @Suppress("unused")
+    constructor(): this("")
+}
+
+const val ProfileFieldName = "profile"
 
 @Repository
 class PlayerInfoRepository {
@@ -19,10 +22,9 @@ class PlayerInfoRepository {
 
     suspend fun setName(playerId: ObjectId, name: String) {
         collection().lock(playerId) {
-            if (it["profile"] == null) {
-                it["profile"] = Document()
-            }
-            (it["profile"] as Document)["name"] = name
+            val playerInfo = SubDocument(it, ProfileFieldName, PlayerInfo::class.java)
+            playerInfo.value.name = name
+            playerInfo.save()
         }
     }
 
@@ -34,10 +36,7 @@ class PlayerInfoRepository {
     private fun collection() = db.database.getCollection<Document>("player")
 
     suspend fun getInfo(playerId: ObjectId): PlayerInfo {
-        val doc = getPlayer(playerId).get("profile", Document::class.java)
-        return withContext(Dispatchers.IO) {
-            jacksonObjectMapper().readValue(doc.toJson(), PlayerInfo::class.java)
-        }
+        return SubDocument(getPlayer(playerId), ProfileFieldName, PlayerInfo::class.java).value
     }
 }
 
