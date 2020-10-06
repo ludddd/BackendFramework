@@ -1,17 +1,30 @@
 package com.ludd.mongo
 
-import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
-import org.bson.Document
+import org.bson.BsonDocument
+import org.bson.BsonDocumentReader
+import org.bson.BsonDocumentWriter
+import org.bson.codecs.Codec
+import org.bson.codecs.DecoderContext
+import org.bson.codecs.EncoderContext
 
-class SubDocument<T>(private val parent: Document, private val field: String, type: Class<T>) {
+class SubDocument<T>(private val parent: BsonDocument, private val field: String, private val type: Class<T>) {
+
+    private val codec: Codec<T> by lazy { MongoCodecRegistry.get()[type] }
 
     val value: T = if (parent[field] != null) {
-        jacksonObjectMapper().readValue((parent[field] as Document).toJson(), type)
+        codec.decode(
+            BsonDocumentReader(
+                (parent.getDocument(field))
+            ), DecoderContext.builder().build()
+        )
     } else {
         type.getDeclaredConstructor().newInstance()
     }
 
     fun save() {
-        parent[field] = Document.parse(jacksonObjectMapper().writeValueAsString(value))
+        val doc = BsonDocument()
+        val writer = BsonDocumentWriter(doc)
+        codec.encode(writer, value, EncoderContext.builder().build())
+        parent[field] = doc
     }
 }

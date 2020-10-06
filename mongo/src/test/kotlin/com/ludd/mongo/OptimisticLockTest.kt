@@ -2,7 +2,8 @@ package com.ludd.mongo
 
 import com.ludd.test_utils.KGenericContainer
 import kotlinx.coroutines.runBlocking
-import org.bson.Document
+import org.bson.BsonDocument
+import org.bson.BsonString
 import org.bson.types.ObjectId
 import org.junit.jupiter.api.*
 import org.junit.jupiter.api.Assertions.assertEquals
@@ -26,7 +27,7 @@ class OptimisticLockTest {
 
     @Autowired
     private lateinit var db: MongoDatabase
-    private lateinit var collection: CoroutineCollection<Document>
+    private lateinit var collection: CoroutineCollection<BsonDocument>
 
     @BeforeEach
     fun setUp() {
@@ -42,64 +43,64 @@ class OptimisticLockTest {
 
     @Test
     fun lock() = runBlocking{
-        val id = collection.insertOne(Document()).insertedId!!.asObjectId().value
+        val id = collection.insertOne(BsonDocument()).insertedId!!.asObjectId().value
 
         collection.lock(id) {
-            it.append("fieldA", "A")
+            it.append("fieldA", BsonString("A"))
         }
 
         val updatedDoc = collection.findOneById(id)!!
-        assertEquals(0, updatedDoc.getInteger("version"))
-        assertEquals("A", updatedDoc.getString("fieldA"))
+        assertEquals(0, updatedDoc.getInt32("version").value)
+        assertEquals("A", updatedDoc.getString("fieldA").value)
 
         collection.lock(id) {
-            it.append("fieldA", "B")
+            it.append("fieldA", BsonString("B"))
         }
 
         val updatedDoc1 = collection.findOneById(id)!!
-        assertEquals(1, updatedDoc1.getInteger("version"))
-        assertEquals("B", updatedDoc1.getString("fieldA"))
+        assertEquals(1, updatedDoc1.getInt32("version").value)
+        assertEquals("B", updatedDoc1.getString("fieldA").value)
     }
 
     @Test
     fun lock_fails() = runBlocking {
-        val id = collection.insertOne(Document()).insertedId!!.asObjectId().value
+        val id = collection.insertOne(BsonDocument()).insertedId!!.asObjectId().value
         Assertions.assertThrows(OptimisticLockException::class.java) {
             runBlocking {
                 collection.lock(id) {
                     conflictingLock(id)
-                    it.append("fieldA", "A")
+                    it.append("fieldA", BsonString("A"))
                 }
             }
         }
         val updatedDoc = collection.findOneById(id)!!
-        assertEquals(100, updatedDoc.getInteger("version"))
-        assertEquals("B", updatedDoc.getString("fieldA"))
+        assertEquals(100, updatedDoc.getInt32("version").value)
+        assertEquals("B", updatedDoc.getString("fieldA").value)
         Unit
     }
 
     @ParameterizedTest(name = "{0}")
     @ValueSource(ints = [2, 3])
     fun lock_with_n_tries(tryCount: Int) = runBlocking {
-        val id = collection.insertOne(Document()).insertedId!!.asObjectId().value
+        val id = collection.insertOne(BsonDocument()).insertedId!!.asObjectId().value
         var nTry = 0
         collection.lock(id) {
             if (nTry < tryCount) {
                 conflictingLock(id)
                 nTry++
             }
-            it.append("fieldA", "A")
+            it.append("fieldA", BsonString("A"))
         }
         val updatedDoc = collection.findOneById(id)!!
-        assertEquals(tryCount, updatedDoc.getInteger("version"))
-        assertEquals("A", updatedDoc.getString("fieldA"))
+        assertEquals(tryCount, updatedDoc.getInt32("version").value)
+        assertEquals("A", updatedDoc.getString("fieldA").value)
         Unit
     }
 
     private fun conflictingLock(id: ObjectId) {
         runBlocking {
             collection.lock(id) { doc ->
-                doc.append("fieldA", "B")
+                doc.append("fieldA", BsonString("B"))
             }
         }
     }

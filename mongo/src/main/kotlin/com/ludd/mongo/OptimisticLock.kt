@@ -1,7 +1,8 @@
 package com.ludd.mongo
 
 import com.mongodb.client.model.Filters
-import org.bson.Document
+import org.bson.BsonDocument
+import org.bson.BsonInt32
 import org.bson.types.ObjectId
 import org.litote.kmongo.coroutine.CoroutineCollection
 
@@ -9,17 +10,18 @@ const val MAX_LOCK_TRY = 100
 
 class OptimisticLockException(msg: String): Exception(msg)
 
+//TODO: provide Document interface too
 class OptimisticLock(private val name: String, private val maxTry: Int = MAX_LOCK_TRY) {
-    suspend fun lock(collection: CoroutineCollection<Document>, id: ObjectId, block: (doc: Document) -> Unit) {
+    suspend fun lock(collection: CoroutineCollection<BsonDocument>, id: ObjectId, block: (doc: BsonDocument) -> Unit) {
         for (i in 0..maxTry) {
-            val doc: Document = collection.findOneById(id)!!
+            val doc: BsonDocument = collection.findOneById(id)!!
             block(doc)
             var filter = Filters.eq("_id", id)
             if (doc.containsKey("version")) {
                 filter = Filters.and(filter, Filters.eq("version", doc["version"]))
-                doc["version"] = doc.getInteger("version") + 1
+                doc["version"] = BsonInt32(doc.getInt32("version").value + 1)
             } else {
-                doc.append("version", 0)
+                doc.append("version", BsonInt32(0))
                 filter = Filters.and(filter, Filters.not(Filters.exists("version")))
             }
             if (collection.replaceOne(filter, doc).matchedCount == 1L) return
@@ -28,6 +30,6 @@ class OptimisticLock(private val name: String, private val maxTry: Int = MAX_LOC
     }
 }
 
-suspend fun CoroutineCollection<Document>.lock(id: ObjectId, block: (doc: Document) -> Unit) {
+suspend fun CoroutineCollection<BsonDocument>.lock(id: ObjectId, block: (doc: BsonDocument) -> Unit) {
     OptimisticLock("for document $id in collection $namespace").lock(this, id, block)
 }

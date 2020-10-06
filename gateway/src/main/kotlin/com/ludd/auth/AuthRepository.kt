@@ -1,5 +1,6 @@
 package com.ludd.auth
 
+import com.ludd.mongo.MongoCodecRegistry
 import com.ludd.mongo.MongoDatabase
 import com.ludd.mongo.SubDocument
 import com.mongodb.ErrorCategory
@@ -7,7 +8,7 @@ import com.mongodb.MongoWriteException
 import com.mongodb.client.model.Filters
 import com.mongodb.client.model.IndexOptions
 import mu.KotlinLogging
-import org.bson.Document
+import org.bson.BsonDocument
 import org.litote.kmongo.eq
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.stereotype.Repository
@@ -33,17 +34,22 @@ class AuthRepository: IAuthRepository {
     @Autowired
     private lateinit var db: MongoDatabase
 
+    init {
+        MongoCodecRegistry.register(PlayerIds::class.java)
+        MongoCodecRegistry.register(PlayerId::class.java)
+    }
+
     override suspend fun findPlayer(type: String, id: String): String? {
         val filter = Filters.elemMatch("$PlayerIdsField.${PlayerIds::ids.name}",
                 Filters.and(
             PlayerId::type eq type,
             PlayerId::name eq id))
         val player = collection.findOne(filter)
-        return player?.getObjectId("_id")?.toString()
+        return player?.getObjectId("_id")?.value?.toString()
     }
 
     override suspend fun addPlayer(type: String, id: String): String {
-        val doc = Document()
+        val doc = BsonDocument()
         addPlayerId(doc, type, id)
         val rez = try {
             collection.insertOne(doc)
@@ -54,13 +60,13 @@ class AuthRepository: IAuthRepository {
         return rez.insertedId!!.asObjectId().value.toString()
     }
 
-    private fun addPlayerId(doc: Document, type: String, id: String) {
+    private fun addPlayerId(doc: BsonDocument, type: String, id: String) {
         val ids = SubDocument(doc, PlayerIdsField, PlayerIds::class.java)
         ids.value.add(PlayerId(type, id))
         ids.save()
     }
 
-    private val collection get() = db.database.getCollection<Document>("player")
+    private val collection get() = db.database.getCollection<BsonDocument>("player")
 
     private fun convertException(e: MongoWriteException, type: String, id: String): Exception {
         return if (e.error.category == ErrorCategory.DUPLICATE_KEY) {
