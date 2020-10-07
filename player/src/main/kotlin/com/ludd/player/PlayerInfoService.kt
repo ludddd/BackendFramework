@@ -5,6 +5,7 @@ import com.ludd.rpc.RpcMethod
 import com.ludd.rpc.RpcService
 import com.ludd.rpc.SessionContext
 import mu.KotlinLogging
+import org.bson.types.ObjectId
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.stereotype.Component
 
@@ -21,7 +22,7 @@ class PlayerInfoService {
     @RpcMethod
     suspend fun setName(request: Player.SetNameRequest, sessionContext: SessionContext): Player.SetNameResponse {
         require(sessionContext.playerId != null) { "Player should be authorized" }
-        repository.setName(sessionContext.playerId!!, request.name)
+        repository.setName(ObjectId(sessionContext.playerId!!), request.name)
         return Player.SetNameResponse.newBuilder().setCode(Player.SetNameResponse.Code.Ok).build()
     }
 }

@@ -42,8 +42,10 @@ internal class PlayerInfoRepositoryTest {
 
     @Test
     fun setName() = runBlocking {
-        db.database.getCollection<Document>("player").insertOne(Document().append("id", "playerA"))
-        repository.setName("playerA", "A")
-        assertEquals(PlayerInfo("A"), repository.getInfo("playerA"))
+        val playerId = db.database.getCollection<Document>("player")
+            .insertOne(Document())
+            .insertedId!!.asObjectId().value
+        repository.setName(playerId, "A")
+        assertEquals(PlayerInfo("A"), repository.getInfo(playerId))
     }
 }
