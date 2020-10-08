@@ -69,8 +69,10 @@ abstract class AbstractTcpServer(private val port:Int): CoroutineScope {
 
     fun stop() = runBlocking{
         logger.info("Stopping server...")
-        job.cancelChildren()
-        job.cancelAndJoin()
+        withTimeout(30_000) {
+            job.cancelChildren()
+            job.cancelAndJoin()
+        }
         logger.info("Server is stopped")
     }
 

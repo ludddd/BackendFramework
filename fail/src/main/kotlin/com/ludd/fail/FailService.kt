@@ -2,6 +2,8 @@ package com.ludd.fail
 
 import com.ludd.rpc.RpcMethod
 import com.ludd.rpc.RpcService
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import mu.KotlinLogging
 import org.springframework.stereotype.Component
 import kotlin.system.exitProcess
@@ -16,7 +18,9 @@ class FailService {
     @RpcMethod
     suspend fun crash(arg: ByteArray): ByteArray {
         logger.info("Stopping app by request")
-        exitProcess(1)
+        withContext(Dispatchers.IO) {
+            exitProcess(1)
+        }
     }
 
     @Suppress("RedundantSuspendModifier")
