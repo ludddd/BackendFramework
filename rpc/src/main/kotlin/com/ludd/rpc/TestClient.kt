@@ -1,6 +1,7 @@
-package com.ludd.player
+package com.ludd.rpc
 
 import com.google.protobuf.AbstractMessage
+import com.google.protobuf.ByteString
 import com.ludd.rpc.to.Message
 import io.ktor.network.selector.*
 import io.ktor.network.sockets.*
@@ -25,10 +26,14 @@ class TestClient(private val host: String = "localhost", private val port: Int =
     }
 
     suspend fun sendRpc(service: String, method: String, arg: AbstractMessage) {
+        sendRpc(service, method, arg.toByteString())
+    }
+
+    suspend fun sendRpc(service: String, method: String, arg: ByteString) {
         val request = Message.RpcRequest.newBuilder()
             .setService(service)
             .setMethod(method)
-            .setArg(arg.toByteString())
+            .setArg(arg)
             .build()
         send(request)
     }

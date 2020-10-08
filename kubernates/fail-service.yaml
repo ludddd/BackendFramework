@@ -1,0 +1,13 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: fail
+  labels:
+    exposed: "true"
+spec:
+  selector:
+    app: fail
+  ports:
+    - protocol: TCP
+      port: 9001
+      targetPort: 9001
