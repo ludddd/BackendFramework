@@ -2,6 +2,7 @@ package com.ludd.gateway
 
 import com.google.protobuf.ByteString
 import com.ludd.rpc.AbstractTcpServer
+import com.ludd.rpc.CallResult
 import com.ludd.rpc.IRpcServiceProvider
 import com.ludd.rpc.SessionContext
 import com.ludd.rpc.to.Message
@@ -54,18 +55,31 @@ class GatewayServer(@Value("\${gateway.tcp_server.port}") port: Integer):
             logger.info("message for service ${message.service} received")
             val service = serviceProvider.get(message.service)
             val result = service.call(message.method, message.arg.toByteArray(), sessionContext)
-            responseBuilder.result = ByteString.copyFrom(result.result)
             if (result.error != null) {
-                responseBuilder.hasError = true
-                responseBuilder.error = result.error
                 logger.debug("Error received from service ${message.service}: ${result.error}")
             }
+            responseBuilder.initFromCallResult(result)
         } catch (e: Exception) {
             logger.error(e) {"Error while calling service ${message.service} method ${message.method} with context $sessionContext"}
-            responseBuilder.hasError = true
-            responseBuilder.error = e.toString()
+            responseBuilder.initFromError(e)
         }
         return responseBuilder.build()
+    }
+
+    private fun Message.RpcResponse.Builder.initFromError(e: Exception) {
+        hasError = true
+        error = e.toString()
+    }
+
+    private fun Message.RpcResponse.Builder.initFromCallResult(
+        callResult: CallResult
+    ) {
+        if (callResult.error != null) {
+            hasError = true
+            error = callResult.error
+        } else {
+            result = ByteString.copyFrom(callResult.result)
+        }
     }
 
     @PostConstruct

@@ -6,6 +6,9 @@ import io.ktor.utils.io.*
 import io.ktor.utils.io.jvm.javaio.*
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import mu.KotlinLogging
+
+private val logger = KotlinLogging.logger {}
 
 class SocketRpcMessageChannel(private val socket: Socket): IRpcMessageChannel {
 
@@ -17,7 +20,7 @@ class SocketRpcMessageChannel(private val socket: Socket): IRpcMessageChannel {
         }
     }
 
-    override suspend fun read(): Message.RpcResponse {
+    override suspend fun read(): Message.RpcResponse? {
         return withContext(Dispatchers.IO) {
             Message.RpcResponse.parseDelimitedFrom(read.toInputStream())
         }

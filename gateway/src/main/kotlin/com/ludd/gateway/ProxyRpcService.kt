@@ -43,7 +43,7 @@ class ProxyRpcService(
 
 interface IRpcMessageChannel {
     suspend fun write(msg: Message.InnerRpcRequest)
-    suspend fun read(): Message.RpcResponse
+    suspend fun read(): Message.RpcResponse?
     fun isClosed(): Boolean
 }
 
@@ -65,7 +65,7 @@ class ProxyConnection(private val serviceName: String, private val channel: IRpc
             .setContext(sessionContext.toRequestContext())
             .build()
         channel.write(message)
-        val rez = channel.read()
+        val rez = channel.read() ?: return CallResult(null, "No response from service $serviceName")
         logger.debug("Response from service $serviceName is received")
         if (rez.hasError) logger.debug("with error: ${rez.error}")
         return rez.toCallResult()
