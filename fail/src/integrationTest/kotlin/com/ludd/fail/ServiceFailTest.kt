@@ -33,11 +33,15 @@ class ServiceFailTest {
     @Timeout(1, unit = TimeUnit.MINUTES)
     fun restartAfterCrash() = runBlocking{
         val client = TestClient()
-
-        client.sendRpc("fail", "echo", ByteString.copyFromUtf8("aaa"))
-        client.receive(Message.RpcResponse::parseDelimitedFrom)
+        for (i in 0..3) {
+            client.sendRpc("fail", "echo", ByteString.copyFromUtf8("aaa"))
+            client.receive(Message.RpcResponse::parseDelimitedFrom)
+        }
         client.sendRpc("fail", "crash", ByteString.copyFromUtf8(""))
-        client.sendRpc("fail", "echo", ByteString.copyFromUtf8("bbb"))
+        for (i in 0..3) {
+            client.sendRpc("fail", "echo", ByteString.copyFromUtf8("bbb"))
+            client.receive(Message.RpcResponse::parseDelimitedFrom)
+        }
         val response = client.receive(Message.RpcResponse::parseDelimitedFrom)
         assertEquals("bbb", response.result.toString(Charset.defaultCharset()))
     }

@@ -18,6 +18,7 @@ import java.nio.charset.Charset
 import java.util.stream.Stream
 import kotlin.test.assertEquals
 import kotlin.test.assertNull
+import kotlin.test.assertTrue
 
 open class MockAutoDiscovery(private val function: () -> CallResult) : IRpcAutoDiscovery {
     override suspend fun call(
@@ -105,6 +106,7 @@ class RpcServerTest {
         val outMsg = withContext(Dispatchers.IO) {
             Message.RpcResponse.parseDelimitedFrom(output.toInputStream())
         }
+        assertTrue(outMsg.hasError)
         assertEquals("error", outMsg.error)
     }
 

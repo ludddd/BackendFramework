@@ -15,6 +15,7 @@ message RpcRequest {
 message RpcResponse {
     bytes result = 1;
     string error = 2;
+    bool hasError = 3;
 }
 
 message RequestContext {

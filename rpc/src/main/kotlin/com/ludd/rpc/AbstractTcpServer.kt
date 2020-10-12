@@ -12,7 +12,7 @@ import kotlin.coroutines.CoroutineContext
 private val logger = KotlinLogging.logger {}
 
 @KtorExperimentalAPI
-abstract class AbstractTcpServer(private val port:Int): CoroutineScope {
+abstract class AbstractTcpServer(private val port:Int, private val shutdownTimeoutMs: Long = 30_000): CoroutineScope {
     protected val job = Job()
     override val coroutineContext: CoroutineContext
         get() = Dispatchers.Default + job
@@ -69,7 +69,7 @@ abstract class AbstractTcpServer(private val port:Int): CoroutineScope {
 
     fun stop() = runBlocking{
         logger.info("Stopping server...")
-        withTimeout(30_000) {
+        withTimeout(shutdownTimeoutMs) {
             job.cancelChildren()
             job.cancelAndJoin()
         }

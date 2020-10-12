@@ -55,12 +55,14 @@ class GatewayServer(@Value("\${gateway.tcp_server.port}") port: Integer):
             val service = serviceProvider.get(message.service)
             val result = service.call(message.method, message.arg.toByteArray(), sessionContext)
             responseBuilder.result = ByteString.copyFrom(result.result)
-            responseBuilder.error = result.error
             if (result.error != null) {
+                responseBuilder.hasError = true
+                responseBuilder.error = result.error
                 logger.debug("Error received from service ${message.service}: ${result.error}")
             }
         } catch (e: Exception) {
             logger.error(e) {"Error while calling service ${message.service} method ${message.method} with context $sessionContext"}
+            responseBuilder.hasError = true
             responseBuilder.error = e.toString()
         }
         return responseBuilder.build()

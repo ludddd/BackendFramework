@@ -67,9 +67,15 @@ class ProxyConnection(private val serviceName: String, private val channel: IRpc
         channel.write(message)
         val rez = channel.read()
         logger.debug("Response from service $serviceName is received")
-        if (rez.error != null) logger.debug("with error: ${rez.error}")
-        return CallResult(rez.result.toByteArray(), rez.error)
+        if (rez.hasError) logger.debug("with error: ${rez.error}")
+        return rez.toCallResult()
     }
+
+    private fun Message.RpcResponse.toCallResult() =
+        if (hasError)
+            CallResult(null, error)
+        else
+            CallResult(result.toByteArray(), null)
 }
 
 private fun SessionContext.toRequestContext(): Message.RequestContext {

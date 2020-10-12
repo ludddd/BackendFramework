@@ -23,7 +23,7 @@ class Application
 @Component
 class Server(@Autowired autoDiscovery: IRpcAutoDiscovery,
              @Suppress("PLATFORM_CLASS_MAPPED_TO_KOTLIN")
-             @Value("\${server.port}") port: Integer): RpcServer(autoDiscovery, port)
+             @Value("\${server.port}") port: Integer): RpcServer(autoDiscovery, port, 1_000)
 {
     @PostConstruct
     fun onPostConstruct() {

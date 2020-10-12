@@ -16,7 +16,8 @@ private val logger = KotlinLogging.logger {}
 @Suppress("EXPERIMENTAL_API_USAGE")
 open class RpcServer(private val autoDiscovery: IRpcAutoDiscovery,
                 @Suppress("PLATFORM_CLASS_MAPPED_TO_KOTLIN")
-                port: Integer): AbstractTcpServer(port.toInt()) {
+                port: Integer,
+                 shutdownTimeoutMs: Long = 30_000): AbstractTcpServer(port.toInt(), shutdownTimeoutMs) {
 
     @OptIn(KtorExperimentalAPI::class)
     override suspend fun processMessages(
@@ -41,9 +42,10 @@ open class RpcServer(private val autoDiscovery: IRpcAutoDiscovery,
             logger.error(e) {
                 "Error while calling service ${inMessage.service} method ${inMessage.method} with context ${inMessage.context}"
             }
+            responseBuilder.hasError = true
             responseBuilder.error = e.toString()
         }
-        if (responseBuilder.error != null) {
+        if (responseBuilder.hasError) {
             logger.debug("Responding to ${inMessage.service}:${inMessage.method} call with error: ${responseBuilder.error}")
         }
         withContext(Dispatchers.IO) {
@@ -57,6 +59,7 @@ open class RpcServer(private val autoDiscovery: IRpcAutoDiscovery,
     ) {
         if (rez.error != null) {
             logger.debug("CallResult has error: ${rez.error}")
+            hasError = true
             error = rez.error
         } else {
             result = ByteString.copyFrom(rez.result)
