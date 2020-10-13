@@ -6,6 +6,8 @@ import com.ludd.rpc.to.Message
 import io.ktor.util.*
 import kotlinx.coroutines.runBlocking
 import mu.KotlinLogging
+import org.hamcrest.MatcherAssert.assertThat
+import org.hamcrest.Matchers
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.Timeout
 import org.testcontainers.junit.jupiter.Testcontainers
@@ -33,16 +35,19 @@ class ServiceFailTest {
     @Timeout(1, unit = TimeUnit.MINUTES)
     fun restartAfterCrash() = runBlocking{
         val client = TestClient()
-        for (i in 0..3) {
-            client.sendRpc("fail", "echo", ByteString.copyFromUtf8("aaa"))
-            client.receive(Message.RpcResponse::parseDelimitedFrom)
-        }
+        client.sendRpc("fail", "echo", ByteString.copyFromUtf8("aaa"))
+        client.receive(Message.RpcResponse::parseDelimitedFrom)
         client.sendRpc("fail", "crash", ByteString.copyFromUtf8(""))
-        for (i in 0..3) {
-            client.sendRpc("fail", "echo", ByteString.copyFromUtf8("bbb"))
-            client.receive(Message.RpcResponse::parseDelimitedFrom)
-        }
         val response = client.receive(Message.RpcResponse::parseDelimitedFrom)
         assertEquals("bbb", response.result.toString(Charset.defaultCharset()))
+    }
+
+    @Test
+    fun hostName() = runBlocking {
+        val client = TestClient()
+        client.sendRpc("fail", "hostName", ByteString.copyFromUtf8(""))
+        val response = client.receive(Message.RpcResponse::parseDelimitedFrom)
+        val hostName = response.result.toString(Charset.defaultCharset())
+        assertThat(hostName, Matchers.startsWith("fail"))
     }
 }

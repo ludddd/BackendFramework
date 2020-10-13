@@ -6,6 +6,8 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import mu.KotlinLogging
 import org.springframework.stereotype.Component
+import java.net.InetAddress
+import java.nio.charset.Charset
 import kotlin.system.exitProcess
 
 private val logger = KotlinLogging.logger {}
@@ -28,5 +30,13 @@ class FailService {
     suspend fun echo(arg: ByteArray): ByteArray {
         logger.info("echo is called")
         return arg
+    }
+
+    @Suppress("RedundantSuspendModifier")
+    @RpcMethod
+    suspend fun hostName(arg: ByteArray): ByteArray {
+        return withContext(Dispatchers.IO) {
+             InetAddress.getLocalHost().hostName.toByteArray(Charset.defaultCharset())
+        }
     }
 }
