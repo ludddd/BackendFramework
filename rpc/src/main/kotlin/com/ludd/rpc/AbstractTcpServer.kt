@@ -13,6 +13,9 @@ private val logger = KotlinLogging.logger {}
 
 @KtorExperimentalAPI
 abstract class AbstractTcpServer(private val port:Int, private val shutdownTimeoutMs: Long = 30_000): CoroutineScope {
+
+    constructor(port:Int): this(port, 30_000)   //why spring need this?
+
     protected val job = Job()
     override val coroutineContext: CoroutineContext
         get() = Dispatchers.Default + job
