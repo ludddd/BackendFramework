@@ -19,15 +19,15 @@ open class RpcServer(private val autoDiscovery: IRpcAutoDiscovery,
                 port: Integer,
                  shutdownTimeoutMs: Long = 30_000): AbstractTcpServer(port.toInt(), shutdownTimeoutMs) {
 
+    private val ack = Message.RpcReceiveAck.newBuilder().setCode(Message.RpcReceiveAck.Code.Ok).build()
+
     @OptIn(KtorExperimentalAPI::class)
     override suspend fun processMessages(
         read: ByteReadChannel,
         write: ByteWriteChannel,
         sessionContext: SessionContext
     ) {
-        val inMessage = withContext(Dispatchers.IO) {
-            Message.InnerRpcRequest.parseDelimitedFrom(read.toInputStream(coroutineContext[Job]))
-        }
+        val inMessage = receiveMessage(read, write)
         logger.debug("Rpc call ${inMessage.service}:${inMessage.method} is received")
         val responseBuilder = Message.RpcResponse.newBuilder()
         try {
@@ -50,6 +50,26 @@ open class RpcServer(private val autoDiscovery: IRpcAutoDiscovery,
         }
         withContext(Dispatchers.IO) {
             responseBuilder.build().writeDelimitedTo(write.toOutputStream(coroutineContext[Job]))
+            write.flush()
+        }
+    }
+
+    private suspend fun receiveMessage(
+        read: ByteReadChannel,
+        write: ByteWriteChannel
+    ): Message.InnerRpcRequest {
+        val inMessage = withContext(Dispatchers.IO) {
+            Message.InnerRpcRequest.parseDelimitedFrom(read.toInputStream(coroutineContext[Job]))
+        }
+        if (inMessage.option.ackEnabled) {
+            sendAcknowledge(write)
+        }
+        return inMessage
+    }
+
+    private suspend fun sendAcknowledge(write: ByteWriteChannel) {
+        withContext(Dispatchers.IO) {
+            ack.writeDelimitedTo(write.toOutputStream(coroutineContext[Job]))
             write.flush()
         }
     }

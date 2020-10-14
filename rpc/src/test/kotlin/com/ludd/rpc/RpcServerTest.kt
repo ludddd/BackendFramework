@@ -60,6 +60,31 @@ class RpcServerTest {
         Unit
     }
 
+    @Test
+    fun rpcAcknowledge() = runBlocking {
+        val autoDiscovery = mockService {
+            CallResult("bbb".toByteArray(Charset.defaultCharset()), null)
+        }
+        @Suppress("DEPRECATION")
+        val server = RpcServer(autoDiscovery, Integer(0))
+        val output = ByteChannel()
+        server.processMessages(
+            rpcRequest(Message.RequestOption.newBuilder().setAckEnabled(true).build()).toInputChannel(),
+            output,
+            SessionContext(InetSocketAddress.createUnresolved("", 0))
+        )
+        val inputStream = output.toInputStream()
+        val ack = withContext(Dispatchers.IO) {
+            Message.RpcReceiveAck.parseDelimitedFrom(inputStream)
+        }
+        assertEquals(Message.RpcReceiveAck.Code.Ok, ack.code)
+        val outMsg = withContext(Dispatchers.IO) {
+            Message.RpcResponse.parseDelimitedFrom(inputStream)
+        }
+        assertEquals("bbb", outMsg.result.toString(Charset.defaultCharset()))
+        Unit
+    }
+
     private fun mockService(function: () -> CallResult) = Mockito.spy(MockAutoDiscovery(function))
 
     companion object {
@@ -110,7 +135,7 @@ class RpcServerTest {
         assertEquals("error", outMsg.error)
     }
 
-    private fun rpcRequest(): Message.InnerRpcRequest {
+    private fun rpcRequest(option: Message.RequestOption = Message.RequestOption.newBuilder().build()): Message.InnerRpcRequest {
         return Message.InnerRpcRequest.newBuilder()
             .setService("serviceA")
             .setMethod("methodA")
@@ -119,6 +144,7 @@ class RpcServerTest {
                 Message.RequestContext.newBuilder()
                     .setPlayerId("playerA")
             )
+            .setOption(option)
             .build()
     }
 
