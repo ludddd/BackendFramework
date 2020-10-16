@@ -9,6 +9,8 @@ import mu.KotlinLogging
 
 private val logger = KotlinLogging.logger {}
 
+class NoResponseFromServiceException(serviceName: String): Exception("No response from service $serviceName")
+
 //TODO: should have pool of connection to each service
 //to allow multiple calls from different users at once
 //but no more than connection pool size
@@ -32,8 +34,7 @@ open class ProxyConnection(private val serviceName: String,
             .setOption(requestOptions)
             .build()
         channel.write(message)
-        //TODO: maybe channel.read()==null should be exception?...
-        val rez = channel.read() ?: return CallResult(null, "No response from service $serviceName")
+        val rez = channel.read() ?: throw NoResponseFromServiceException(serviceName)
         logger.debug("Response from service $serviceName is received")
         if (rez.hasError) logger.debug("with error: ${rez.error}")
         return rez.toCallResult()

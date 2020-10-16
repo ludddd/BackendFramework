@@ -50,4 +50,23 @@ class ProxyRpcServiceTest {
         assertEquals(rez.error, "com.ludd.gateway.ConnectionLost")
         Unit
     }
+
+    @Test
+    fun noResponseFromService() = runBlocking {
+        val arg = "aaa".toByteArray(Charset.defaultCharset())
+        val rpcOptions = RpcOptions(3, false)
+        val sessionContext = SessionContext(InetSocketAddress(0))
+
+        val connection = Mockito.mock(ProxyRpcService.Connection::class.java)
+        Mockito.`when`(connection.call("foo", arg, sessionContext)).then {throw NoResponseFromServiceException("test")}
+        val factory = Mockito.mock(ProxyRpcService.ConnectionFactory::class.java)
+        Mockito.`when`(factory.connect("test", "", 0, rpcOptions)).thenReturn(connection)
+        val service = ProxyRpcService("test", "", 0, rpcOptions, factory)
+
+        val rez = service.call("foo", arg, sessionContext)
+
+        assertNull(rez.result)
+        assertEquals(rez.error, "com.ludd.gateway.NoResponseFromServiceException: No response from service test")
+        Unit
+    }
 }

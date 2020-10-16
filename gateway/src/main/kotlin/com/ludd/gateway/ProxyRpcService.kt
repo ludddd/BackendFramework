@@ -54,6 +54,9 @@ class ProxyRpcService(
                 logger.info("Connection with host $host is lost, retrying")
                 failCause = e
                 continue
+            } catch (e: NoResponseFromServiceException) {
+                logger.info("no response from service $serviceName on host $host")
+                failCause = e
             }
         }
         return CallResult(null, failCause!!.toString())

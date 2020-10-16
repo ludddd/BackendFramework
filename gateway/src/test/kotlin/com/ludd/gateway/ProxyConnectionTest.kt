@@ -5,8 +5,10 @@ import com.ludd.rpc.to.Message
 import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.assertThrows
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.ValueSource
+import org.mockito.Mockito
 import org.springframework.boot.test.context.SpringBootTest
 import java.net.InetSocketAddress
 import java.nio.charset.Charset
@@ -53,5 +55,16 @@ internal class ProxyConnectionTest {
         val arg = "aaa".toByteArray(Charset.defaultCharset())
         connection.call("funcA", arg, context)
         assertEquals(ackEnabled, channel.outMessage!!.option.ackEnabled)
+    }
+
+    @Test
+    fun noResponseFromService() = runBlocking {
+        val channel = Mockito.mock(IRpcMessageChannel::class.java)
+        val connection = ProxyConnection("test", channel, false)
+        val context = SessionContext(InetSocketAddress(0))
+        val arg = "aaa".toByteArray(Charset.defaultCharset())
+        assertThrows<NoResponseFromServiceException>{
+            runBlocking { connection.call("funcA", arg, context) } }
+        Unit
     }
 }
