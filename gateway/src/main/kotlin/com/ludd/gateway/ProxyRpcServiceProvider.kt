@@ -4,7 +4,7 @@ import com.ludd.rpc.IRpcService
 import com.ludd.rpc.IRpcServiceProvider
 import com.ludd.rpc.NoServiceException
 import com.ludd.rpc.RpcAutoDiscovery
-import io.ktor.util.KtorExperimentalAPI
+import io.ktor.util.*
 import io.kubernetes.client.openapi.Configuration
 import io.kubernetes.client.openapi.apis.CoreV1Api
 import io.kubernetes.client.util.ClientBuilder
@@ -16,6 +16,7 @@ import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty
 import org.springframework.stereotype.Service
+import javax.annotation.PostConstruct
 
 
 private val logger = KotlinLogging.logger {}
@@ -30,22 +31,27 @@ class ProxyRpcServiceProvider(
     private val services = mutableListOf<ServiceProxy>()
     @Autowired
     private lateinit var autoDiscovery: RpcAutoDiscovery
+    @Suppress("PLATFORM_CLASS_MAPPED_TO_KOTLIN", "RemoveRedundantQualifierName")
+    @Value("\${rpc.retry:3}")
+    private lateinit var retryCount: java.lang.Integer
+    @Suppress("PLATFORM_CLASS_MAPPED_TO_KOTLIN")
+    @Value("\${rpc.ackEnabled:false}")
+    private lateinit var ackEnabled: java.lang.Boolean
 
     override fun get(service: String): IRpcService {
         if (autoDiscovery.hasService(service)) return autoDiscovery.getService(service)
         return services.find { it.name == service }?.proxy ?: throw NoServiceException(service)
     }
 
-    init {
-        runBlocking {
+    @PostConstruct
+    fun init() = runBlocking {
             services.addAll(servicesFromProperties())
             services.addAll(discover())
         }
-    }
 
     private fun servicesFromProperties(): List<ServiceProxy> {
         return servicesInProperties.map {
-            ServiceProxy.parse(it)
+            ServiceProxy.parse(it, rpcOptions())
         }
     }
 
@@ -69,7 +75,7 @@ class ProxyRpcServiceProvider(
                         null
                     }
                     else -> {
-                        ServiceProxy(name, name, port.intValue)
+                        ServiceProxy(name, name, port.intValue, rpcOptions())
                     }
                 }
             }
@@ -79,16 +85,18 @@ class ProxyRpcServiceProvider(
         }
     }
 
-    class ServiceProxy(val name: String, val host: String, val port: Int) {
-        val proxy: ProxyRpcService by lazy { ProxyRpcService(name, host, port) }
+    fun rpcOptions() = RpcOptions(retryCount.toInt(), ackEnabled.booleanValue())
+
+    class ServiceProxy(val name: String, val host: String, val port: Int, val rpcOptions: RpcOptions) {
+        val proxy: ProxyRpcService by lazy { ProxyRpcService(name, host, port, rpcOptions) }
 
         companion object {
-            fun parse(str: String): ServiceProxy {
+            fun parse(str: String, rpcOptions: RpcOptions): ServiceProxy {
                 val items = str.split(":")
                 if (items.size != 3 || items[2].toIntOrNull() == null) {
                     throw WrongServiceStringFormatException(str)
                 }
-                return ServiceProxy(items[0], items[1], items[2].toInt())
+                return ServiceProxy(items[0], items[1], items[2].toInt(), rpcOptions)
             }
         }
     }

@@ -1,44 +1,67 @@
 package com.ludd.gateway
 
-import com.google.protobuf.ByteString
 import com.ludd.rpc.CallResult
 import com.ludd.rpc.IRpcService
 import com.ludd.rpc.SessionContext
 import com.ludd.rpc.to.Message
-import io.ktor.network.selector.*
-import io.ktor.network.sockets.*
 import io.ktor.util.*
-import kotlinx.coroutines.Dispatchers
 import mu.KotlinLogging
+import java.lang.Integer.max
 
 private val logger = KotlinLogging.logger {}
+
+data class RpcOptions(val retryCount: Int,
+                      val ackEnabled: Boolean)
 
 @KtorExperimentalAPI
 class ProxyRpcService(
     private val serviceName: String,
     private val host: String,
-    private val port: Int
+    private val port: Int,
+    private val rpcOptions: RpcOptions,
+    private val connectionFactory: ConnectionFactory = SocketConnectionFactory()
 ): IRpcService
 {
-    private val selectorManager = ActorSelectorManager(Dispatchers.IO)
-    private var proxyConnection: ProxyConnection? = null
+    interface ConnectionFactory {
+        suspend fun connect(serviceName: String,
+                    host: String,
+                    port: Int,
+                    rpcOptions: RpcOptions): Connection
+    }
+
+    interface Connection {
+        suspend fun call(method: String, arg: ByteArray, sessionContext: SessionContext): CallResult
+        val isClosed: Boolean
+    }
+
+    private var connection: Connection? = null
 
     override suspend fun call(method: String, arg: ByteArray, sessionContext: SessionContext): CallResult {
-        if (!isConnected()) {
-            connect()
+        var failCause: Exception? = null
+        for (i in 1..getRetryCount()) {
+            if (!isConnected()) {
+                try {
+                    connection = connectionFactory.connect(serviceName, host, port, rpcOptions)
+                } catch (e: Exception) {
+                    failCause = e
+                    continue
+                }
+            }
+
+            try {
+                return connection!!.call(method, arg, sessionContext)
+            } catch (e: ConnectionLost) {
+                logger.info("Connection with host $host is lost, retrying")
+                failCause = e
+                continue
+            }
         }
-
-        return proxyConnection!!.call(method, arg, sessionContext)
+        return CallResult(null, failCause!!.toString())
     }
 
-    private fun isConnected() = proxyConnection != null && !proxyConnection!!.isClosed
+    private fun getRetryCount() = max(1, rpcOptions.retryCount)
 
-    private suspend fun connect() {
-        logger.info("Connecting to $host:$port")
-        val socket = aSocket(selectorManager).tcp().connect(host, port)
-        proxyConnection = ProxyConnection(serviceName, SocketRpcMessageChannel(socket))
-    }
-
+    private fun isConnected() = connection?.isClosed == false
 }
 
 interface IRpcMessageChannel {
@@ -47,38 +70,7 @@ interface IRpcMessageChannel {
     fun isClosed(): Boolean
 }
 
-//TODO: should have pool of connection to each service
-//to allow multiple calls from different users at once
-//but no more than connection pool size
-class ProxyConnection(private val serviceName: String, private val channel: IRpcMessageChannel) {
-
-    val isClosed: Boolean
-        get() = channel.isClosed()
-
-    suspend fun call(method: String, arg: ByteArray, sessionContext: SessionContext): CallResult {
-        logger.info("Rerouting call to service $serviceName")
-        val message = Message.InnerRpcRequest
-            .newBuilder()
-            .setService(serviceName)
-            .setMethod(method)
-            .setArg(ByteString.copyFrom(arg))
-            .setContext(sessionContext.toRequestContext())
-            .build()
-        channel.write(message)
-        val rez = channel.read() ?: return CallResult(null, "No response from service $serviceName")
-        logger.debug("Response from service $serviceName is received")
-        if (rez.hasError) logger.debug("with error: ${rez.error}")
-        return rez.toCallResult()
-    }
-
-    private fun Message.RpcResponse.toCallResult() =
-        if (hasError)
-            CallResult(null, error)
-        else
-            CallResult(result.toByteArray(), null)
-}
-
-private fun SessionContext.toRequestContext(): Message.RequestContext {
+fun SessionContext.toRequestContext(): Message.RequestContext {
     val builder = Message.RequestContext.newBuilder()
     if (playerId != null) builder.playerId = playerId
     return builder.build()

@@ -80,10 +80,14 @@ internal class ProxyRpcServiceProviderTest {
 
     @Test
     fun parseServiceString() {
-        Assertions.assertThrows(WrongServiceStringFormatException::class.java) {ProxyRpcServiceProvider.ServiceProxy.parse("aaa")}
-        Assertions.assertThrows(WrongServiceStringFormatException::class.java) {ProxyRpcServiceProvider.ServiceProxy.parse("a:b:c:d")}
-        Assertions.assertThrows(WrongServiceStringFormatException::class.java) {ProxyRpcServiceProvider.ServiceProxy.parse("a:b:c")}
-        val parsed = ProxyRpcServiceProvider.ServiceProxy.parse("aaa:bbb:10")
+        val rpcOptions = RpcOptions(1, false)
+        Assertions.assertThrows(WrongServiceStringFormatException::class.java)
+            {ProxyRpcServiceProvider.ServiceProxy.parse("aaa", rpcOptions)}
+        Assertions.assertThrows(WrongServiceStringFormatException::class.java)
+            {ProxyRpcServiceProvider.ServiceProxy.parse("a:b:c:d", rpcOptions)}
+        Assertions.assertThrows(WrongServiceStringFormatException::class.java)
+            {ProxyRpcServiceProvider.ServiceProxy.parse("a:b:c", rpcOptions)}
+        val parsed = ProxyRpcServiceProvider.ServiceProxy.parse("aaa:bbb:10", rpcOptions)
         assertEquals("aaa", parsed.name)
         assertEquals("bbb", parsed.host)
         assertEquals(10, parsed.port)
@@ -104,7 +108,7 @@ internal class ProxyRpcServiceProviderTest {
 
             override fun isClosed(): Boolean = true
         }
-        val proxy = ProxyConnection("test", channel)
+        val proxy = ProxyConnection("test", channel, false)
         val context = SessionContext(InetSocketAddress(0))
         context.authenticate("playerA")
         proxy.call("funcA", "aaa".toByteArray(Charset.defaultCharset()), context)

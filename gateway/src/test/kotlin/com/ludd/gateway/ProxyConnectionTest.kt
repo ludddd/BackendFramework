@@ -5,6 +5,8 @@ import com.ludd.rpc.to.Message
 import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.params.ParameterizedTest
+import org.junit.jupiter.params.provider.ValueSource
 import org.springframework.boot.test.context.SpringBootTest
 import java.net.InetSocketAddress
 import java.nio.charset.Charset
@@ -33,12 +35,23 @@ internal class ProxyConnectionTest {
     @Test
     fun call() = runBlocking {
         val channel = MockChannel()
-        val connection = ProxyConnection("test", channel)
+        val connection = ProxyConnection("test", channel, false)
         val context = SessionContext(InetSocketAddress(0))
         val arg = "aaa".toByteArray(Charset.defaultCharset())
         connection.call("funcA", arg, context)
         assertEquals("aaa", channel.outMessage!!.arg.toString(Charset.defaultCharset()))
         assertEquals("test", channel.outMessage!!.service)
         assertEquals("funcA", channel.outMessage!!.method)
+    }
+
+    @ParameterizedTest
+    @ValueSource(booleans = [false, true])
+    fun acknowledgement(ackEnabled: Boolean) = runBlocking {
+        val channel = MockChannel()
+        val connection = ProxyConnection("test", channel, ackEnabled)
+        val context = SessionContext(InetSocketAddress(0))
+        val arg = "aaa".toByteArray(Charset.defaultCharset())
+        connection.call("funcA", arg, context)
+        assertEquals(ackEnabled, channel.outMessage!!.option.ackEnabled)
     }
 }

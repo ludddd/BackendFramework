@@ -10,6 +10,8 @@ import mu.KotlinLogging
 
 private val logger = KotlinLogging.logger {}
 
+class ConnectionLost: Exception()
+
 class SocketRpcMessageChannel(private val socket: Socket): IRpcMessageChannel {
 
     private val write: ByteWriteChannel = socket.openWriteChannel(autoFlush = true)
@@ -17,6 +19,13 @@ class SocketRpcMessageChannel(private val socket: Socket): IRpcMessageChannel {
     override suspend fun write(msg: Message.InnerRpcRequest) {
         withContext(Dispatchers.IO) {
             msg.writeDelimitedTo(write.toOutputStream())
+            if (msg.option.ackEnabled) {
+                val ack = Message.RpcReceiveAck.parseDelimitedFrom(read.toInputStream())
+                if (ack == null) {
+                    socket.close()
+                    throw ConnectionLost()
+                }
+            }
         }
     }
 
@@ -27,5 +36,4 @@ class SocketRpcMessageChannel(private val socket: Socket): IRpcMessageChannel {
     }
 
     override fun isClosed(): Boolean = socket.isClosed || write.isClosedForWrite || read.isClosedForRead
-
 }
