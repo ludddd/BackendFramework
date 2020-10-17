@@ -19,7 +19,12 @@ class SocketConnectionFactory: ProxyRpcService.ConnectionFactory {
                                  rpcOptions: RpcOptions
     ): ProxyRpcService.Connection {
         logger.info("Connecting to $host:$port")
-        val socket = aSocket(selectorManager).tcp().connect(host, port)
+        val socket = try {
+            aSocket(selectorManager).tcp().connect(host, port)
+        } catch (e: Exception) {
+            logger.error(e) {"error while connecting to $host:$port"}
+            throw e
+        }
         return ProxyConnection(serviceName, SocketRpcMessageChannel(socket), rpcOptions.ackEnabled)
     }
 }
