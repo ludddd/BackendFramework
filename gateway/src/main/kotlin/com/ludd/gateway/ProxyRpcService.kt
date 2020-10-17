@@ -5,13 +5,15 @@ import com.ludd.rpc.IRpcService
 import com.ludd.rpc.SessionContext
 import com.ludd.rpc.to.Message
 import io.ktor.util.*
+import kotlinx.coroutines.delay
 import mu.KotlinLogging
 import java.lang.Integer.max
 
 private val logger = KotlinLogging.logger {}
 
 data class RpcOptions(val retryCount: Int,
-                      val ackEnabled: Boolean)
+                      val ackEnabled: Boolean,
+                      val retryDelayMs: Long)
 
 @KtorExperimentalAPI
 class ProxyRpcService(
@@ -39,6 +41,7 @@ class ProxyRpcService(
     override suspend fun call(method: String, arg: ByteArray, sessionContext: SessionContext): CallResult {
         var failCause: Exception? = null
         for (i in 1..getRetryCount()) {
+            if (i > 1) delay(rpcOptions.retryDelayMs)
             if (!isConnected()) {
                 try {
                     connection = connectionFactory.connect(serviceName, host, port, rpcOptions)

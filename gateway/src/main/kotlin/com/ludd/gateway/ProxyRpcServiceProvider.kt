@@ -37,6 +37,9 @@ class ProxyRpcServiceProvider(
     @Suppress("PLATFORM_CLASS_MAPPED_TO_KOTLIN")
     @Value("\${rpc.ackEnabled:false}")
     private lateinit var ackEnabled: java.lang.Boolean
+    @Suppress("PLATFORM_CLASS_MAPPED_TO_KOTLIN")
+    @Value("\${rpc.retryDelayMs:1000}")
+    private lateinit var retryDelayMs: java.lang.Long
 
     override fun get(service: String): IRpcService {
         if (autoDiscovery.hasService(service)) return autoDiscovery.getService(service)
@@ -85,7 +88,7 @@ class ProxyRpcServiceProvider(
         }
     }
 
-    fun rpcOptions() = RpcOptions(retryCount.toInt(), ackEnabled.booleanValue())
+    fun rpcOptions() = RpcOptions(retryCount.toInt(), ackEnabled.booleanValue(), retryDelayMs.toLong())
 
     class ServiceProxy(val name: String, val host: String, val port: Int, val rpcOptions: RpcOptions) {
         val proxy: ProxyRpcService by lazy { ProxyRpcService(name, host, port, rpcOptions) }
