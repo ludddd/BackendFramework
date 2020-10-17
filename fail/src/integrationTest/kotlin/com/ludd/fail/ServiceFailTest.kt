@@ -4,7 +4,11 @@ import com.google.protobuf.ByteString
 import com.ludd.rpc.TestClient
 import com.ludd.rpc.to.Message
 import io.ktor.util.*
-import kotlinx.coroutines.runBlocking
+import io.kubernetes.client.openapi.ApiClient
+import io.kubernetes.client.openapi.Configuration
+import io.kubernetes.client.openapi.apis.CoreV1Api
+import io.kubernetes.client.util.Config
+import kotlinx.coroutines.*
 import mu.KotlinLogging
 import org.hamcrest.MatcherAssert.assertThat
 import org.hamcrest.Matchers
@@ -14,6 +18,9 @@ import org.testcontainers.junit.jupiter.Testcontainers
 import java.nio.charset.Charset
 import java.util.concurrent.TimeUnit
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
+import kotlin.test.assertNotNull
+
 
 private val logger = KotlinLogging.logger {}
 
@@ -49,5 +56,50 @@ class ServiceFailTest {
         val response = client.receive(Message.RpcResponse::parseDelimitedFrom)
         val hostName = response.result.toString(Charset.defaultCharset())
         assertThat(hostName, Matchers.startsWith("fail"))
+    }
+
+    @Test
+    @Timeout(5, unit = TimeUnit.MINUTES)
+    fun killPod() = runBlocking {
+        val client = TestClient()
+
+        for (i in 1..3) {
+            client.sendRpc("fail", "hostName", ByteString.copyFromUtf8(""))
+            val response = client.receive(Message.RpcResponse::parseDelimitedFrom)
+            assertNotNull(response.result)
+            val hostName = response.result.toString(Charset.defaultCharset())
+
+            val checkJob = checkJob(client, hostName)
+            deletePod(hostName)
+
+            checkJob.join()
+        }
+    }
+
+    private fun CoroutineScope.checkJob(
+        client: TestClient,
+        hostName: String?
+    ): Job {
+        return launch {
+            do {
+                client.sendRpc("fail", "hostName", ByteString.copyFromUtf8(""))
+                val response = client.receive(Message.RpcResponse::parseDelimitedFrom)
+                if (response.hasError) logger.error(response.error)
+                assertFalse(response.hasError)
+                assertNotNull(response.result)
+                val newHostName = response.result.toString(Charset.defaultCharset())
+            } while (newHostName == hostName)
+        }
+    }
+
+    private suspend fun deletePod(hostName: String) {
+        withContext(Dispatchers.IO) {
+            val k8Client: ApiClient = Config.defaultClient()
+            Configuration.setDefaultApiClient(k8Client)
+            val api = CoreV1Api()
+            logger.info("Deleting pod $hostName")
+            api.deleteNamespacedPod(hostName, "default", null, null, null, null, null, null)
+            logger.info("Pod deleted")
+        }
     }
 }
