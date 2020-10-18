@@ -19,7 +19,7 @@ class TestClient(private val host: String = "localhost", private val port: Int =
     private val write = socket.openWriteChannel(autoFlush = true)
     private val read = socket.openReadChannel()
 
-    private suspend fun send(msg: AbstractMessage) {
+    suspend fun send(msg: AbstractMessage) {
         withContext(Dispatchers.IO) {
             msg.writeDelimitedTo(write.toOutputStream())
         }
