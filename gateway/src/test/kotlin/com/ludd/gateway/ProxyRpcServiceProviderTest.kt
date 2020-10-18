@@ -2,8 +2,7 @@ package com.ludd.gateway
 
 import com.ludd.gateway.util.sendEchoMessage
 import com.ludd.rpc.EchoServer
-import com.ludd.rpc.SessionContext
-import com.ludd.rpc.to.Message
+import com.ludd.rpc.session.SessionFactory
 import io.ktor.network.selector.*
 import io.ktor.network.sockets.*
 import io.ktor.util.*
@@ -18,7 +17,6 @@ import org.junit.jupiter.api.Timeout
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.test.annotation.DirtiesContext
-import java.net.InetSocketAddress
 import java.nio.charset.Charset
 import java.util.concurrent.TimeUnit
 import kotlin.test.assertEquals
@@ -40,6 +38,9 @@ internal class ProxyRpcServiceProviderTest {
 
     @Autowired
     private lateinit var proxyRpcServiceProvider: ProxyRpcServiceProvider
+
+    @Autowired
+    private lateinit var sessionFactory: SessionFactory
 
     @Test
     fun echo() = runBlocking{
@@ -80,38 +81,15 @@ internal class ProxyRpcServiceProviderTest {
 
     @Test
     fun parseServiceString() {
-        val rpcOptions = RpcOptions(1, false)
         Assertions.assertThrows(WrongServiceStringFormatException::class.java)
-            {ProxyRpcServiceProvider.ServiceProxy.parse("aaa", rpcOptions)}
+            {ProxyRpcServiceProvider.ServiceProxy.parse("aaa", sessionFactory)}
         Assertions.assertThrows(WrongServiceStringFormatException::class.java)
-            {ProxyRpcServiceProvider.ServiceProxy.parse("a:b:c:d", rpcOptions)}
+            {ProxyRpcServiceProvider.ServiceProxy.parse("a:b:c:d", sessionFactory)}
         Assertions.assertThrows(WrongServiceStringFormatException::class.java)
-            {ProxyRpcServiceProvider.ServiceProxy.parse("a:b:c", rpcOptions)}
-        val parsed = ProxyRpcServiceProvider.ServiceProxy.parse("aaa:bbb:10", rpcOptions)
+            {ProxyRpcServiceProvider.ServiceProxy.parse("a:b:c", sessionFactory)}
+        val parsed = ProxyRpcServiceProvider.ServiceProxy.parse("aaa:bbb:10", sessionFactory)
         assertEquals("aaa", parsed.name)
         assertEquals("bbb", parsed.host)
         assertEquals(10, parsed.port)
-    }
-
-    @Test
-    fun sessionContext() = runBlocking{
-        val channel = object: IRpcMessageChannel {
-            var messageWritten: Message.InnerRpcRequest? = null
-
-            override suspend fun write(msg: Message.InnerRpcRequest) {
-                messageWritten = msg
-            }
-
-            override suspend fun read(): Message.RpcResponse {
-                return Message.RpcResponse.getDefaultInstance()
-            }
-
-            override fun isClosed(): Boolean = true
-        }
-        val proxy = ProxyConnection("test", channel, false)
-        val context = SessionContext(InetSocketAddress(0))
-        context.authenticate("playerA")
-        proxy.call("funcA", "aaa".toByteArray(Charset.defaultCharset()), context)
-        assertEquals("playerA", channel.messageWritten?.context?.playerId)
     }
 }

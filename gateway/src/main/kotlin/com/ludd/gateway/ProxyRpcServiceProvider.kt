@@ -4,6 +4,7 @@ import com.ludd.rpc.IRpcService
 import com.ludd.rpc.IRpcServiceProvider
 import com.ludd.rpc.NoServiceException
 import com.ludd.rpc.RpcAutoDiscovery
+import com.ludd.rpc.session.SessionFactory
 import io.ktor.util.*
 import io.kubernetes.client.openapi.Configuration
 import io.kubernetes.client.openapi.apis.CoreV1Api
@@ -31,15 +32,8 @@ class ProxyRpcServiceProvider(
     private val services = mutableListOf<ServiceProxy>()
     @Autowired
     private lateinit var autoDiscovery: RpcAutoDiscovery
-    @Suppress("PLATFORM_CLASS_MAPPED_TO_KOTLIN", "RemoveRedundantQualifierName")
-    @Value("\${rpc.retry:3}")
-    private lateinit var retryCount: java.lang.Integer
-    @Suppress("PLATFORM_CLASS_MAPPED_TO_KOTLIN")
-    @Value("\${rpc.ackEnabled:false}")
-    private lateinit var ackEnabled: java.lang.Boolean
-    @Suppress("PLATFORM_CLASS_MAPPED_TO_KOTLIN")
-    @Value("\${rpc.retryDelayMs:1000}")
-    private lateinit var retryDelayMs: java.lang.Long
+    @Autowired
+    private lateinit var sessionFactory: SessionFactory
 
     override fun get(service: String): IRpcService {
         if (autoDiscovery.hasService(service)) return autoDiscovery.getService(service)
@@ -54,7 +48,7 @@ class ProxyRpcServiceProvider(
 
     private fun servicesFromProperties(): List<ServiceProxy> {
         return servicesInProperties.map {
-            ServiceProxy.parse(it, rpcOptions())
+            ServiceProxy.parse(it, sessionFactory)
         }
     }
 
@@ -78,7 +72,7 @@ class ProxyRpcServiceProvider(
                         null
                     }
                     else -> {
-                        ServiceProxy(name, name, port.intValue, rpcOptions())
+                        ServiceProxy(name, name, port.intValue, sessionFactory)
                     }
                 }
             }
@@ -88,18 +82,16 @@ class ProxyRpcServiceProvider(
         }
     }
 
-    fun rpcOptions() = RpcOptions(retryCount.toInt(), ackEnabled.booleanValue(), retryDelayMs.toLong())
-
-    class ServiceProxy(val name: String, val host: String, val port: Int, val rpcOptions: RpcOptions) {
-        val proxy: ProxyRpcService by lazy { ProxyRpcService(name, host, port, rpcOptions) }
+    class ServiceProxy(val name: String, val host: String, val port: Int, sessionFactory: SessionFactory) {
+        val proxy: ProxyRpcService by lazy { ProxyRpcService(name, host, port, sessionFactory) }
 
         companion object {
-            fun parse(str: String, rpcOptions: RpcOptions): ServiceProxy {
+            fun parse(str: String, sessionFactory: SessionFactory): ServiceProxy {
                 val items = str.split(":")
                 if (items.size != 3 || items[2].toIntOrNull() == null) {
                     throw WrongServiceStringFormatException(str)
                 }
-                return ServiceProxy(items[0], items[1], items[2].toInt(), rpcOptions)
+                return ServiceProxy(items[0], items[1], items[2].toInt(), sessionFactory)
             }
         }
     }

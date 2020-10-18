@@ -67,6 +67,9 @@ open class SocketSession(private val serviceName: String,
 
     val ackEnabled: Boolean
         get() = enableAck
+
+    override val isClosed: Boolean
+        get() = socket.isClosed || write.isClosedForWrite || read.isClosedForRead
 }
 
 fun SessionContext.toRequestContext(): Message.RequestContext {

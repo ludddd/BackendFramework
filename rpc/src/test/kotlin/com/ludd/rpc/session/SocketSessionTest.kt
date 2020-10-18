@@ -97,4 +97,28 @@ internal class SocketSessionTest {
     private suspend fun createSession(): Session {
         return factory.connect("test", "localhost", 9000)
     }
+
+    @Test
+    fun sessionContext() = runBlocking{
+
+        val autoDiscovery = object: IRpcAutoDiscovery {
+            override suspend fun call(
+                service: String,
+                method: String,
+                arg: ByteArray,
+                sessionContext: SessionContext
+            ): CallResult {
+                assertEquals("playerA", sessionContext.playerId)
+                return CallResult(null, null)
+            }
+
+        }
+        @Suppress("DEPRECATION") val server = RpcServer(autoDiscovery, Integer(port))
+        server.start()
+        val session = createSession()
+        val sessionContext = SessionContext(InetSocketAddress(0))
+        sessionContext.authenticate("playerA")
+        session.call("test", "aaa".toByteArray(Charset.defaultCharset()), sessionContext)
+        server.stop()
+    }
 }
