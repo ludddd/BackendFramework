@@ -4,9 +4,7 @@ import com.google.protobuf.ByteString
 import com.ludd.rpc.CallResult
 import com.ludd.rpc.SessionContext
 import com.ludd.rpc.to.Message
-import io.ktor.network.selector.*
 import io.ktor.network.sockets.*
-import io.ktor.util.*
 import io.ktor.utils.io.*
 import io.ktor.utils.io.jvm.javaio.*
 import kotlinx.coroutines.Dispatchers
@@ -16,12 +14,15 @@ import mu.KotlinLogging
 private val logger = KotlinLogging.logger {}
 
 class NoResponseFromServiceException(serviceName: String): Exception("No response from service $serviceName")
+class ConnectionLost: Exception("Connection is lost")
 
-class SocketSession(private val serviceName: String,
-                    socket: Socket): Session {
+open class SocketSession(private val serviceName: String,
+                         private val socket: Socket,
+                         private val enableAck: Boolean): Session {
 
     private val write: ByteWriteChannel = socket.openWriteChannel(autoFlush = true)
     private val read: ByteReadChannel = socket.openReadChannel()
+    private val rpcOptions = Message.RequestOption.newBuilder().setAckEnabled(ackEnabled).build()
 
     override suspend fun call(method: String, arg: ByteArray, sessionContext: SessionContext): CallResult {
         logger.info("Rerouting call to service $serviceName")
@@ -30,6 +31,7 @@ class SocketSession(private val serviceName: String,
             .setMethod(method)
             .setArg(ByteString.copyFrom(arg))
             .setContext(sessionContext.toRequestContext())
+            .setOption(rpcOptions)
             .build()
         write(message)
         val rez = read() ?: throw NoResponseFromServiceException(serviceName)
@@ -38,9 +40,16 @@ class SocketSession(private val serviceName: String,
         return rez.toCallResult()
     }
 
-    suspend fun write(msg: Message.InnerRpcRequest) {
+    open suspend fun write(msg: Message.InnerRpcRequest) {
         withContext(Dispatchers.IO) {
             msg.writeDelimitedTo(write.toOutputStream())
+            if (ackEnabled) {
+                val ack = Message.RpcReceiveAck.parseDelimitedFrom(read.toInputStream())
+                if (ack == null) {
+                    socket.close()
+                    throw ConnectionLost()
+                }
+            }
         }
     }
 
@@ -55,24 +64,9 @@ class SocketSession(private val serviceName: String,
             CallResult(null, error)
         else
             CallResult(result.toByteArray(), null)
-}
 
-class SocketSessionFactory: SessionFactory {
-
-    @OptIn(KtorExperimentalAPI::class)
-    private val selectorManager = ActorSelectorManager(Dispatchers.IO)
-
-    override suspend fun connect(serviceName: String, host: String, port: Int): Session {
-        logger.info("Connecting to $host:$port")
-        val socket = try {
-            aSocket(selectorManager).tcp().connect(host, port)
-        } catch (e: Exception) {
-            logger.error(e) {"error while connecting to $host:$port"}
-            throw e
-        }
-        return SocketSession(serviceName, socket)
-    }
-
+    val ackEnabled: Boolean
+        get() = enableAck
 }
 
 fun SessionContext.toRequestContext(): Message.RequestContext {

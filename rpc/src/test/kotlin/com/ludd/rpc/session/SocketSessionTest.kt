@@ -10,15 +10,19 @@ import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
+import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.boot.test.context.SpringBootTest
 import java.net.InetSocketAddress
 import java.nio.charset.Charset
 
 private val logger = KotlinLogging.logger {}
 
+@SpringBootTest(properties = ["rpc.ackEnabled=false"])
 internal class SocketSessionTest {
 
     private val port = 9000
-    private val factory = SocketSessionFactory()
+    @Autowired
+    private lateinit var factory: SocketSessionFactory
 
     private fun createServer(function: () -> CallResult): RpcServer {
         val autoDiscovery = object: IRpcAutoDiscovery {
