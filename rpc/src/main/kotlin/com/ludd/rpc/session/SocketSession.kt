@@ -3,12 +3,8 @@ package com.ludd.rpc.session
 import com.google.protobuf.ByteString
 import com.ludd.rpc.CallResult
 import com.ludd.rpc.SessionContext
+import com.ludd.rpc.conn.SocketWrapper
 import com.ludd.rpc.to.Message
-import io.ktor.network.sockets.*
-import io.ktor.utils.io.*
-import io.ktor.utils.io.jvm.javaio.*
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
 import mu.KotlinLogging
 
 private val logger = KotlinLogging.logger {}
@@ -17,11 +13,9 @@ class NoResponseFromServiceException(serviceName: String): Exception("No respons
 class ConnectionLost: Exception("Connection is lost")
 
 open class SocketSession(private val serviceName: String,
-                         private val socket: Socket,
+                         private val socket: SocketWrapper,
                          private val enableAck: Boolean): Session {
 
-    private val write: ByteWriteChannel = socket.openWriteChannel(autoFlush = true)
-    private val read: ByteReadChannel = socket.openReadChannel()
     private val rpcOptions = Message.RequestOption.newBuilder().setAckEnabled(ackEnabled).build()
 
     override suspend fun call(method: String, arg: ByteArray, sessionContext: SessionContext): CallResult {
@@ -34,28 +28,21 @@ open class SocketSession(private val serviceName: String,
             .setOption(rpcOptions)
             .build()
         write(message)
-        val rez = read() ?: throw NoResponseFromServiceException(serviceName)
+        val rez = socket.read(Message.RpcResponse::parseDelimitedFrom)
+            ?: throw NoResponseFromServiceException(serviceName)
         logger.debug("Response from service $serviceName is received")
         if (rez.hasError) logger.debug("with error: ${rez.error}")
         return rez.toCallResult()
     }
 
     open suspend fun write(msg: Message.InnerRpcRequest) {
-        withContext(Dispatchers.IO) {
-            msg.writeDelimitedTo(write.toOutputStream())
-            if (ackEnabled) {
-                val ack = Message.RpcReceiveAck.parseDelimitedFrom(read.toInputStream())
-                if (ack == null) {
-                    socket.close()
-                    throw ConnectionLost()
-                }
+        socket.write(msg)
+        if (ackEnabled) {
+            val ack = socket.read(Message.RpcReceiveAck::parseDelimitedFrom)
+            if (ack == null) {
+                socket.close()
+                throw ConnectionLost()
             }
-        }
-    }
-
-    suspend fun read(): Message.RpcResponse? {
-        return withContext(Dispatchers.IO) {
-            Message.RpcResponse.parseDelimitedFrom(read.toInputStream())
         }
     }
 
@@ -69,7 +56,7 @@ open class SocketSession(private val serviceName: String,
         get() = enableAck
 
     override val isClosed: Boolean
-        get() = socket.isClosed || write.isClosedForWrite || read.isClosedForRead
+        get() = socket.isClosed
 }
 
 fun SessionContext.toRequestContext(): Message.RequestContext {

@@ -1,5 +1,6 @@
 package com.ludd.rpc.session
 
+import com.ludd.rpc.conn.SocketWrapper
 import io.ktor.network.selector.*
 import io.ktor.network.sockets.*
 import io.ktor.util.*
@@ -27,7 +28,7 @@ class SocketSessionFactory: SessionFactory {
             logger.error(e) {"error while connecting to $host:$port"}
             throw e
         }
-        return SocketSession(serviceName, socket, ackEnabled.booleanValue())
+        return SocketSession(serviceName, SocketWrapper(socket), ackEnabled.booleanValue())
     }
 
 }
