@@ -5,14 +5,14 @@ import mu.KotlinLogging
 
 private val logger = KotlinLogging.logger {}
 
-class SocketSessionFactory(private val serviceName: String,
-                           private val host: String,
-                           private val port: Int,
-                           private val ackEnabled: Boolean): SessionFactory {
+class Connection(private val serviceName: String,
+                 private val host: String,
+                 private val port: Int,
+                 private val ackEnabled: Boolean) {
 
     private val socketFactory = SocketWrapperFactory()
 
-    override suspend fun connect(): Session {
+    suspend fun openSession(): Session {
         logger.info("Connecting to $host:$port")
         val socket = try {
             socketFactory.connect(host, port)

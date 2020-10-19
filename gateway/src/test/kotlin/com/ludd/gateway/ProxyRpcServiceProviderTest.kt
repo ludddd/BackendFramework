@@ -2,7 +2,7 @@ package com.ludd.gateway
 
 import com.ludd.gateway.util.sendEchoMessage
 import com.ludd.rpc.EchoServer
-import com.ludd.rpc.session.SessionFactoryConstructor
+import com.ludd.rpc.session.ConnectionProvider
 import io.ktor.network.selector.*
 import io.ktor.network.sockets.*
 import io.ktor.util.*
@@ -40,7 +40,7 @@ internal class ProxyRpcServiceProviderTest {
     private lateinit var proxyRpcServiceProvider: ProxyRpcServiceProvider
 
     @Autowired
-    private lateinit var factoryConstructor: SessionFactoryConstructor
+    private lateinit var factoryConstructor: ConnectionProvider
 
     @Test
     fun echo() = runBlocking{
