@@ -1,14 +1,16 @@
 package com.ludd.rpc.conn
 
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
-import java.io.Closeable
+import kotlinx.coroutines.withContext
 
 class ConnectionPool(private val host: String,
-                     private val post: Int,
-                     private val capacity: Int) {
+                     private val port: Int,
+                     private val capacity: Int,
+                     private val socketFactory: RpcSocketFactory) {
 
     private val pool = mutableListOf<PooledSocket>()
     private val lock = Mutex()
@@ -20,7 +22,7 @@ class ConnectionPool(private val host: String,
                 var socket = pool.find { !it.isUsed }
                 if (socket != null) return alloc(socket)
                 if (pool.size < capacity) {
-                    socket = PooledSocket(this)
+                    socket = PooledSocket(socketFactory.connect(host, port), this)
                     pool.add(socket)
                     return alloc(socket)
                 }
@@ -29,7 +31,7 @@ class ConnectionPool(private val host: String,
         }
     }
 
-    suspend fun free(socket: PooledSocket) {
+    fun free(socket: PooledSocket) {
         require(pool.contains(socket))
         assert(socket.isUsed)
         socket.isUsed = false
@@ -53,12 +55,17 @@ class ConnectionPool(private val host: String,
         }
 }
 
-class PooledSocket(private val pool: ConnectionPool): Closeable {
+class PooledSocket(
+    private val socket: RpcSocket,
+    private val pool: ConnectionPool): RpcSocket by socket {
 
     @Volatile
     var isUsed: Boolean = false
 
     override fun close() = runBlocking{
+        withContext(Dispatchers.IO) {
+            socket.close()
+        }
         pool.free(this@PooledSocket)
     }
 }

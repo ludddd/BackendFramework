@@ -2,11 +2,9 @@ package com.ludd.echo
 
 import com.google.protobuf.ByteString
 import com.ludd.rpc.EchoServer
-import com.ludd.rpc.conn.tcpConnect
+import com.ludd.rpc.conn.SocketWrapperFactory
 import com.ludd.rpc.to.Message
-import io.ktor.network.selector.*
 import io.ktor.util.*
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
@@ -24,8 +22,8 @@ internal class EchoServerTest {
 
     @Test
     fun echo() = runBlocking {
-        val selectorManager = ActorSelectorManager(Dispatchers.IO)
-        val socket = selectorManager.tcpConnect("127.0.0.1", server.getPort())
+        val socketFactory = SocketWrapperFactory()
+        val socket = socketFactory.connect("127.0.0.1", server.getPort())
 
         val message = Message.RpcRequest
             .newBuilder()

@@ -5,12 +5,19 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
+import org.mockito.Mockito
 
 internal class ConnectionPoolTest {
 
+    private val factory = object: RpcSocketFactory {
+        override suspend fun connect(host: String, port: Int): RpcSocket {
+            return Mockito.mock(RpcSocket::class.java)
+        }
+    }
+
     @Test
     fun connect() = runBlocking{
-        val pool = ConnectionPool("", 0, 10)
+        val pool = ConnectionPool("", 0, 10, factory)
         val socket = pool.connect()
         assertNotNull(socket)
         assertTrue(socket.isUsed)
@@ -19,7 +26,7 @@ internal class ConnectionPoolTest {
 
     @Test
     fun free() = runBlocking {
-        val pool = ConnectionPool("", 0, 10)
+        val pool = ConnectionPool("", 0, 10, factory)
         val socket = pool.connect()
         socket.close()
         assertEquals(0, pool.usedCount)
@@ -28,7 +35,7 @@ internal class ConnectionPoolTest {
 
     @Test
     fun socketReused() = runBlocking {
-        val pool = ConnectionPool("", 0, 10)
+        val pool = ConnectionPool("", 0, 10, factory)
         val socketA = pool.connect()
         socketA.close()
         val socketB = pool.connect()
@@ -38,7 +45,7 @@ internal class ConnectionPoolTest {
 
     @Test
     fun capacityReached() = runBlocking {
-        val pool = ConnectionPool("", 0, 1)
+        val pool = ConnectionPool("", 0, 1, factory)
         val socketA = pool.connect()
         val socketB = async { pool.connect() }
         delay(5)
@@ -48,7 +55,7 @@ internal class ConnectionPoolTest {
 
     @Test
     fun socketAllocatedWhenFreed() = runBlocking {
-        val pool = ConnectionPool("", 0, 1)
+        val pool = ConnectionPool("", 0, 1, factory)
         val socketA = pool.connect()
         val socketB = async { pool.connect() }
         delay(5)
