@@ -2,14 +2,10 @@ package com.ludd.gateway
 
 import com.ludd.auth.IAuthRepository
 import com.ludd.auth.to.Auth
+import com.ludd.rpc.conn.tcpConnect
 import com.ludd.rpc.to.Message
-import io.ktor.network.selector.ActorSelectorManager
-import io.ktor.network.sockets.aSocket
-import io.ktor.network.sockets.openReadChannel
-import io.ktor.network.sockets.openWriteChannel
-import io.ktor.util.KtorExperimentalAPI
-import io.ktor.utils.io.jvm.javaio.toInputStream
-import io.ktor.utils.io.jvm.javaio.toOutputStream
+import io.ktor.network.selector.*
+import io.ktor.util.*
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
@@ -35,7 +31,7 @@ class GatewayAuthTest {
     @Test
     fun callAuth() = runBlocking {
         val selectorManager = ActorSelectorManager(Dispatchers.IO)
-        val socket = aSocket(selectorManager).tcp().connect("127.0.0.1", port = tcpServer.getPort())
+        val socket = selectorManager.tcpConnect("127.0.0.1", tcpServer.getPort())
         val authRequest = Auth.SignInRequest.newBuilder().build()
         val request = Message.RpcRequest
             .newBuilder()
@@ -43,15 +39,9 @@ class GatewayAuthTest {
             .setMethod("signIn")
             .setArg(authRequest.toByteString())
             .build()
-        val write = socket.openWriteChannel(autoFlush = true)
-        val read = socket.openReadChannel()
-        withContext(Dispatchers.IO) {
-            request.writeDelimitedTo(write.toOutputStream())
-        }
+        socket.write(request)
 
-        val response = withContext(Dispatchers.IO) {
-            Message.RpcResponse.parseDelimitedFrom(read.toInputStream())
-        }
+        val response = socket.read(Message.RpcResponse::parseDelimitedFrom)
         val authResponse = withContext(Dispatchers.IO) {
             Auth.SignInResponse.parseDelimitedFrom(response.result.newInput())
         }

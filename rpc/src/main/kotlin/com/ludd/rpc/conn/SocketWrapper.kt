@@ -1,6 +1,7 @@
 package com.ludd.rpc.conn
 
 import com.google.protobuf.AbstractMessage
+import io.ktor.network.selector.*
 import io.ktor.network.sockets.*
 import io.ktor.utils.io.*
 import io.ktor.utils.io.jvm.javaio.*
@@ -31,4 +32,10 @@ class SocketWrapper(private val socket: Socket) {
 
     val isClosed: Boolean
         get() = socket.isClosed || write.isClosedForWrite || read.isClosedForRead
+}
+
+@Suppress("EXPERIMENTAL_API_USAGE")
+suspend fun ActorSelectorManager.tcpConnect(host: String, port: Int): SocketWrapper {
+    val socket = aSocket(this).tcp().connect(host, port)
+    return SocketWrapper(socket)
 }

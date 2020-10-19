@@ -2,14 +2,12 @@ package com.ludd.echo
 
 import com.google.protobuf.ByteString
 import com.ludd.rpc.EchoServer
+import com.ludd.rpc.conn.tcpConnect
 import com.ludd.rpc.to.Message
 import io.ktor.network.selector.*
-import io.ktor.network.sockets.*
 import io.ktor.util.*
-import io.ktor.utils.io.jvm.javaio.*
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
-import kotlinx.coroutines.withContext
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
@@ -27,22 +25,16 @@ internal class EchoServerTest {
     @Test
     fun echo() = runBlocking {
         val selectorManager = ActorSelectorManager(Dispatchers.IO)
-        val socket = aSocket(selectorManager).tcp().connect("127.0.0.1", port = server.getPort())
-        val write = socket.openWriteChannel(autoFlush = true)
-        val read = socket.openReadChannel()
+        val socket = selectorManager.tcpConnect("127.0.0.1", server.getPort())
 
         val message = Message.RpcRequest
             .newBuilder()
             .setService("echo")
             .setArg(ByteString.copyFrom("aaa", Charset.defaultCharset()))
             .build()
-        withContext(Dispatchers.IO) {
-            message.writeDelimitedTo(write.toOutputStream())
-        }
+        socket.write(message)
 
-        val response = withContext(Dispatchers.IO) {
-            Message.RpcResponse.parseDelimitedFrom(read.toInputStream())
-        }
+        val response = socket.read(Message.RpcResponse::parseDelimitedFrom)
         kotlin.test.assertEquals("aaa", response.result.toString(Charset.defaultCharset()))
     }
 }
