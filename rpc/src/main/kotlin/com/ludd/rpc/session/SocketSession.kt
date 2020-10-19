@@ -3,8 +3,10 @@ package com.ludd.rpc.session
 import com.google.protobuf.ByteString
 import com.ludd.rpc.CallResult
 import com.ludd.rpc.SessionContext
-import com.ludd.rpc.conn.SocketWrapper
+import com.ludd.rpc.conn.RpcSocket
 import com.ludd.rpc.to.Message
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import mu.KotlinLogging
 
 private val logger = KotlinLogging.logger {}
@@ -13,7 +15,7 @@ class NoResponseFromServiceException(serviceName: String): Exception("No respons
 class ConnectionLost: Exception("Connection is lost")
 
 open class SocketSession(private val serviceName: String,
-                         private val socket: SocketWrapper,
+                         private val socket: RpcSocket,
                          private val enableAck: Boolean): Session {
 
     private val rpcOptions = Message.RequestOption.newBuilder().setAckEnabled(ackEnabled).build()
@@ -40,7 +42,9 @@ open class SocketSession(private val serviceName: String,
         if (ackEnabled) {
             val ack = socket.read(Message.RpcReceiveAck::parseDelimitedFrom)
             if (ack == null) {
-                socket.close()
+                withContext(Dispatchers.IO) {
+                    socket.close()
+                }
                 throw ConnectionLost()
             }
         }

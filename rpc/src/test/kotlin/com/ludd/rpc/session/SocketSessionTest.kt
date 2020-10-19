@@ -22,7 +22,7 @@ internal class SocketSessionTest {
 
     private val port = 9000
     @Autowired
-    private lateinit var factory: SocketSessionFactory
+    private lateinit var factoryConstructor: SessionFactoryConstructor
 
     private fun createServer(function: () -> CallResult): RpcServer {
         val autoDiscovery = object: IRpcAutoDiscovery {
@@ -95,7 +95,7 @@ internal class SocketSessionTest {
     }
 
     private suspend fun createSession(): Session {
-        return factory.connect("test", "localhost", 9000)
+        return factoryConstructor.create("test", "localhost", 9000).connect()
     }
 
     @Test

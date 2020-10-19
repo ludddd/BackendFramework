@@ -19,7 +19,7 @@ class SocketSessionAckTest {
 
     private val port = 9000
     @Autowired
-    private lateinit var factory: SocketSessionFactory
+    private lateinit var factoryConstructor: SessionFactoryConstructor
 
     @Test
     fun call() = runBlocking {
@@ -27,7 +27,7 @@ class SocketSessionAckTest {
         @Suppress("DEPRECATION")
         val server = createServer { CallResult("bbb".toByteArray(Charset.defaultCharset()), null) }
         server.start()
-        val session = factory.connect("test", "localhost", 9000)
+        val session = factoryConstructor.create("test", "localhost", 9000).connect()
         assertTrue((session as SocketSession).ackEnabled)
 
         val rez = session.call("test", "aaa".toByteArray(Charset.defaultCharset()), SessionContext(InetSocketAddress(0)))
@@ -56,7 +56,7 @@ class SocketSessionAckTest {
     fun connectionLost() = runBlocking {
         val server = createServer { CallResult(null, null) }
         server.start()
-        val session = factory.connect("test", "localhost", 9000)
+        val session = factoryConstructor.create("test", "localhost", 9000).connect()
         server.stop()
         assertThrows<ConnectionLost> {
             runBlocking {

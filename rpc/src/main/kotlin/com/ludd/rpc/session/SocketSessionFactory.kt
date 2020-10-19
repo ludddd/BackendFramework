@@ -1,34 +1,26 @@
 package com.ludd.rpc.session
 
-import com.ludd.rpc.conn.SocketWrapper
-import io.ktor.network.selector.*
-import io.ktor.network.sockets.*
-import io.ktor.util.*
-import kotlinx.coroutines.Dispatchers
+import com.ludd.rpc.conn.SocketWrapperFactory
 import mu.KotlinLogging
-import org.springframework.beans.factory.annotation.Value
-import org.springframework.stereotype.Component
 
 private val logger = KotlinLogging.logger {}
 
-@Component
-class SocketSessionFactory: SessionFactory {
+class SocketSessionFactory(private val serviceName: String,
+                           private val host: String,
+                           private val port: Int,
+                           private val ackEnabled: Boolean): SessionFactory {
 
-    @OptIn(KtorExperimentalAPI::class)
-    private val selectorManager = ActorSelectorManager(Dispatchers.IO)
-    @Suppress("PLATFORM_CLASS_MAPPED_TO_KOTLIN")
-    @Value("\${rpc.ackEnabled:false}")
-    private lateinit var ackEnabled: java.lang.Boolean
+    private val socketFactory = SocketWrapperFactory()
 
-    override suspend fun connect(serviceName: String, host: String, port: Int): Session {
+    override suspend fun connect(): Session {
         logger.info("Connecting to $host:$port")
         val socket = try {
-            aSocket(selectorManager).tcp().connect(host, port)
+            socketFactory.connect(host, port)
         } catch (e: Exception) {
             logger.error(e) {"error while connecting to $host:$port"}
             throw e
         }
-        return SocketSession(serviceName, SocketWrapper(socket), ackEnabled.booleanValue())
+        return SocketSession(serviceName, socket, ackEnabled)
     }
 
 }

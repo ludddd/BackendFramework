@@ -12,9 +12,6 @@ private val logger = KotlinLogging.logger {}
 
 @KtorExperimentalAPI
 class ProxyRpcService(
-    private val serviceName: String,
-    private val host: String,
-    private val port: Int,
     private val sessionFactory: SessionFactory
 ): IRpcService
 {
@@ -22,7 +19,7 @@ class ProxyRpcService(
 
     override suspend fun call(method: String, arg: ByteArray, sessionContext: SessionContext): CallResult {
         if (!isConnected()) {
-            session = sessionFactory.connect(serviceName, host, port)
+            session = sessionFactory.connect()
         }
         return session!!.call(method, arg, sessionContext)
     }

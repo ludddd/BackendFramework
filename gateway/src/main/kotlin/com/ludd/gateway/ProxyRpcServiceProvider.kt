@@ -5,6 +5,7 @@ import com.ludd.rpc.IRpcServiceProvider
 import com.ludd.rpc.NoServiceException
 import com.ludd.rpc.RpcAutoDiscovery
 import com.ludd.rpc.session.SessionFactory
+import com.ludd.rpc.session.SessionFactoryConstructor
 import io.ktor.util.*
 import io.kubernetes.client.openapi.Configuration
 import io.kubernetes.client.openapi.apis.CoreV1Api
@@ -33,7 +34,7 @@ class ProxyRpcServiceProvider(
     @Autowired
     private lateinit var autoDiscovery: RpcAutoDiscovery
     @Autowired
-    private lateinit var sessionFactory: SessionFactory
+    private lateinit var sessionFactoryConstructor: SessionFactoryConstructor
 
     override fun get(service: String): IRpcService {
         if (autoDiscovery.hasService(service)) return autoDiscovery.getService(service)
@@ -48,7 +49,7 @@ class ProxyRpcServiceProvider(
 
     private fun servicesFromProperties(): List<ServiceProxy> {
         return servicesInProperties.map {
-            ServiceProxy.parse(it, sessionFactory)
+            ServiceProxy.parse(it, sessionFactoryConstructor)
         }
     }
 
@@ -72,7 +73,7 @@ class ProxyRpcServiceProvider(
                         null
                     }
                     else -> {
-                        ServiceProxy(name, name, port.intValue, sessionFactory)
+                        ServiceProxy(name, name, port.intValue, sessionFactoryConstructor.create(name, name, port.intValue))
                     }
                 }
             }
@@ -82,16 +83,19 @@ class ProxyRpcServiceProvider(
         }
     }
 
-    class ServiceProxy(val name: String, val host: String, val port: Int, sessionFactory: SessionFactory) {
-        val proxy: ProxyRpcService by lazy { ProxyRpcService(name, host, port, sessionFactory) }
+    class ServiceProxy(val name: String,
+                       val host: String,
+                       val port: Int,
+                       sessionFactory: SessionFactory) {
+        val proxy: ProxyRpcService by lazy { ProxyRpcService(sessionFactory) }
 
         companion object {
-            fun parse(str: String, sessionFactory: SessionFactory): ServiceProxy {
+            fun parse(str: String, constructor: SessionFactoryConstructor): ServiceProxy {
                 val items = str.split(":")
                 if (items.size != 3 || items[2].toIntOrNull() == null) {
                     throw WrongServiceStringFormatException(str)
                 }
-                return ServiceProxy(items[0], items[1], items[2].toInt(), sessionFactory)
+                return ServiceProxy(items[0], items[1], items[2].toInt(), constructor.create(items[0], items[1], items[2].toInt()))
             }
         }
     }
