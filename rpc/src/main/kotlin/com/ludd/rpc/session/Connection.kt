@@ -22,4 +22,5 @@ class Connection(private val serviceName: String,
         return SocketSession(serviceName, socket, ackEnabled)
     }
 
+    fun socketFactory() = socketFactory
 }
