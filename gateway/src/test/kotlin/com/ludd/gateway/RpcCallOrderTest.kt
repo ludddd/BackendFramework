@@ -9,6 +9,7 @@ import com.ludd.rpc.session.Connection
 import io.ktor.util.*
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.async
+import kotlinx.coroutines.newFixedThreadPoolContext
 import kotlinx.coroutines.runBlocking
 import mu.KotlinLogging
 import org.hamcrest.MatcherAssert.assertThat
@@ -41,6 +42,8 @@ class RpcCallOrderTest {
     @Test
     @Timeout(1, unit = TimeUnit.MINUTES)
     fun multipleCallAtOnce() = runBlocking {
+        val threadPool = newFixedThreadPoolContext(10, "test")
+
         val autoDiscovery = MockAutoDiscovery {
             CallResult(it, null)
         }
@@ -54,11 +57,11 @@ class RpcCallOrderTest {
         val connection = Connection("test", "localhost", port, false, socketFactory)
         val service = ProxyRpcService(connection)
 
-        val data = (1..10).map { it.toString() }
+        val data = (1..20).map { it.toString() }
         val barrier = Job()
 
         val jobs = data.map {
-            async {
+            async(threadPool) {
                 barrier.join()
                 logger.info("started")
                 val rez = service.call(

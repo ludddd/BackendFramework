@@ -17,6 +17,8 @@ abstract class AbstractTcpServer(private val port:Int, private val shutdownTimeo
     constructor(port:Int): this(port, 30_000)   //why spring need this?
 
     protected val job = Job()
+    @Suppress("EXPERIMENTAL_API_USAGE")
+    private val threadPool = newFixedThreadPoolContext(5, "tcpServer") //TODO: move to parameter
     override val coroutineContext: CoroutineContext
         get() = Dispatchers.Default + job
 
@@ -27,7 +29,7 @@ abstract class AbstractTcpServer(private val port:Int, private val shutdownTimeo
 
     fun start() {
         logger.info("Starting tcp server at port: $port")
-        serverJob = launch {
+        serverJob = launch(threadPool) {
             val serverSocket = aSocket(selectorManager).tcp().bind(port = getPort())
             logger.info("${this@AbstractTcpServer.javaClass.name} listening at ${serverSocket.localAddress}")
             serverSocket.use {
@@ -45,7 +47,7 @@ abstract class AbstractTcpServer(private val port:Int, private val shutdownTimeo
 
     private fun startSession(socket: Socket) {
         sessionCount.incrementAndGet()
-        launch {
+        launch(threadPool) {
             val remoteAddress = socket.remoteAddress
             logger.info("start session with $remoteAddress")
             socket.use {
