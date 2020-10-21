@@ -57,26 +57,26 @@ class RpcCallOrderTest {
         val connection = Connection("test", "localhost", port, false, socketFactory)
         val service = ProxyRpcService(connection)
 
-        val data = (1..20).map { it.toString() }
-        val barrier = Job()
+        (1..5).forEach { _ ->
+            val data = (1..10).map { it.toString() }
+            val barrier = Job()
 
-        val jobs = data.map {
-            async(threadPool) {
-                barrier.join()
-                logger.info("started")
-                val rez = service.call(
-                    "test",
-                    it.toByteArray(Charset.defaultCharset()),
-                    SessionContext(InetSocketAddress(0))
-                )
-                val resp = rez.result?.toString(Charset.defaultCharset())
-                logger.info(resp)
-                resp
+            val jobs = data.map {
+                async(threadPool) {
+                    barrier.join()
+                    val rez = service.call(
+                        "test",
+                        it.toByteArray(Charset.defaultCharset()),
+                        SessionContext(InetSocketAddress(0))
+                    )
+                    val resp = rez.result?.toString(Charset.defaultCharset())
+                    resp
+                }
             }
+            barrier.complete()
+            val rez = jobs.map { it.await() }
+            assertThat(rez, Matchers.allOf(data.map { Matchers.hasItem(it) }))
         }
-        barrier.complete()
-        val rez = jobs.map { it.await() }
-        assertThat(rez, Matchers.allOf(data.map { Matchers.hasItem(it) }))
 
         server.stop()
     }
