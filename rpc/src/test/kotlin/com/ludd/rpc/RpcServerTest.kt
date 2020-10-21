@@ -2,6 +2,7 @@ package com.ludd.rpc
 
 import com.google.protobuf.ByteString
 import com.ludd.rpc.to.Message
+import com.ludd.test_util.MockAutoDiscovery
 import com.ludd.test_util.toInputChannel
 import com.ludd.test_util.toInputStream
 import io.ktor.utils.io.*
@@ -19,17 +20,6 @@ import java.util.stream.Stream
 import kotlin.test.assertEquals
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
-
-open class MockAutoDiscovery(private val function: () -> CallResult) : IRpcAutoDiscovery {
-    override suspend fun call(
-        service: String,
-        method: String,
-        arg: ByteArray,
-        sessionContext: SessionContext
-    ): CallResult {
-        return function()
-    }
-}
 
 @SpringBootTest
 class RpcServerTest {
