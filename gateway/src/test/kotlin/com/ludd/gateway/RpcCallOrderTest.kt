@@ -5,7 +5,7 @@ import com.ludd.rpc.IRpcAutoDiscovery
 import com.ludd.rpc.RpcServer
 import com.ludd.rpc.SessionContext
 import com.ludd.rpc.conn.SocketWrapperFactory
-import com.ludd.rpc.session.Connection
+import com.ludd.rpc.session.SocketSession
 import io.ktor.util.*
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.async
@@ -54,7 +54,7 @@ class RpcCallOrderTest {
         server.start()
 
         val socketFactory = SocketWrapperFactory()
-        val connection = Connection("test", "localhost", port, false, socketFactory)
+        val connection = SocketSession("test", "localhost", port, false, socketFactory)
         val service = ProxyRpcService(connection)
 
         (1..5).forEach { _ ->

@@ -74,9 +74,13 @@ abstract class AbstractTcpServer(private val port:Int, private val shutdownTimeo
 
     fun stop() = runBlocking{
         logger.info("Stopping server...")
-        withTimeout(shutdownTimeoutMs) {
-            job.cancelChildren()
-            job.cancelAndJoin()
+        try {
+            withTimeout(shutdownTimeoutMs) {
+                job.cancelChildren()
+                job.cancelAndJoin()
+            }
+        } catch (e: TimeoutCancellationException) {
+            logger.error("server jobs failed to stop in required time")
         }
         logger.info("Server is stopped")
     }

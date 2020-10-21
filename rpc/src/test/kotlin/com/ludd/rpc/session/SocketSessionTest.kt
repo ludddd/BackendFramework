@@ -22,7 +22,7 @@ internal class SocketSessionTest {
 
     private val port = 9000
     @Autowired
-    private lateinit var factoryConstructor: ConnectionProvider
+    private lateinit var factoryConstructor: SessionProvider
 
     private fun createServer(function: () -> CallResult): RpcServer {
         val autoDiscovery = object: IRpcAutoDiscovery {
@@ -37,7 +37,7 @@ internal class SocketSessionTest {
         }
 
         @Suppress("DEPRECATION")
-        return RpcServer(autoDiscovery, Integer(port))
+        return RpcServer(autoDiscovery, Integer(port), 1)
     }
 
     @Test
@@ -76,16 +76,18 @@ internal class SocketSessionTest {
 
     @Test
     fun connectionRefused() = runBlocking {
-        assertThrows<java.net.ConnectException> { runBlocking { createSession() } }
+        val session = createSession()
+        assertThrows<java.net.ConnectException> { runBlocking { session.call("test", "aaa".toByteArray(Charset.defaultCharset()), SessionContext(InetSocketAddress(0))) } }
         Unit
     }
 
     @Test
     fun connectionLost() = runBlocking {
-        val server = createServer { CallResult(null, null) }
+        var stopFunc: (() -> Unit)? = null
+        val server = createServer { stopFunc!!(); CallResult(null, null) }
         server.start()
         val session = createSession()
-        server.stop()
+        stopFunc = { server.stop() }
         assertThrows<NoResponseFromServiceException> {
             runBlocking {
                 session.call("test", "aaa".toByteArray(Charset.defaultCharset()), SessionContext(InetSocketAddress(0)))
@@ -95,7 +97,7 @@ internal class SocketSessionTest {
     }
 
     private suspend fun createSession(): Session {
-        return factoryConstructor.create("test", "localhost", 9000).openSession()
+        return factoryConstructor.create("test", "localhost", 9000)
     }
 
     @Test

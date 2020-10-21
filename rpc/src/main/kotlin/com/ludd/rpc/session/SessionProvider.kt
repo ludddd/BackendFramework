@@ -11,7 +11,7 @@ enum class SocketFactoryType() {
 }
 
 @Component
-class ConnectionProvider {
+class SessionProvider {
     @Suppress("PLATFORM_CLASS_MAPPED_TO_KOTLIN")
     @Value("\${rpc.ackEnabled:false}")
     private lateinit var ackEnabled: java.lang.Boolean
@@ -21,8 +21,8 @@ class ConnectionProvider {
     @Value("\${rpc.conn_pool_size:10}")
     private lateinit var connPoolSize: Integer
 
-    fun create(service: String, host: String, port: Int): Connection {
-        return Connection(service, host, port, ackEnabled.booleanValue(), createFactory(factoryType))
+    fun create(service: String, host: String, port: Int): Session {
+        return SocketSession(service, host, port, ackEnabled.booleanValue(), createFactory(factoryType))
     }
 
     private fun createFactory(type: SocketFactoryType): RpcSocketFactory {

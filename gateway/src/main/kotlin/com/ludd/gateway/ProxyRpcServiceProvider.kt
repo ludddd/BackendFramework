@@ -4,8 +4,8 @@ import com.ludd.rpc.IRpcService
 import com.ludd.rpc.IRpcServiceProvider
 import com.ludd.rpc.NoServiceException
 import com.ludd.rpc.RpcAutoDiscovery
-import com.ludd.rpc.session.Connection
-import com.ludd.rpc.session.ConnectionProvider
+import com.ludd.rpc.session.Session
+import com.ludd.rpc.session.SessionProvider
 import io.ktor.util.*
 import io.kubernetes.client.openapi.Configuration
 import io.kubernetes.client.openapi.apis.CoreV1Api
@@ -34,7 +34,7 @@ class ProxyRpcServiceProvider(
     @Autowired
     private lateinit var autoDiscovery: RpcAutoDiscovery
     @Autowired
-    private lateinit var connectionProvider: ConnectionProvider
+    private lateinit var sessionProvider: SessionProvider
 
     override fun get(service: String): IRpcService {
         if (autoDiscovery.hasService(service)) return autoDiscovery.getService(service)
@@ -49,7 +49,7 @@ class ProxyRpcServiceProvider(
 
     private fun servicesFromProperties(): List<ServiceProxy> {
         return servicesInProperties.map {
-            ServiceProxy.parse(it, connectionProvider)
+            ServiceProxy.parse(it, sessionProvider)
         }
     }
 
@@ -73,7 +73,7 @@ class ProxyRpcServiceProvider(
                         null
                     }
                     else -> {
-                        ServiceProxy(name, name, port.intValue, connectionProvider.create(name, name, port.intValue))
+                        ServiceProxy(name, name, port.intValue, sessionProvider.create(name, name, port.intValue))
                     }
                 }
             }
@@ -86,11 +86,11 @@ class ProxyRpcServiceProvider(
     class ServiceProxy(val name: String,
                        val host: String,
                        val port: Int,
-                       connection: Connection) {
-        val proxy: ProxyRpcService by lazy { ProxyRpcService(connection) }
+                       session: Session) {
+        val proxy: ProxyRpcService by lazy { ProxyRpcService(session) }
 
         companion object {
-            fun parse(str: String, constructor: ConnectionProvider): ServiceProxy {
+            fun parse(str: String, constructor: SessionProvider): ServiceProxy {
                 val items = str.split(":")
                 if (items.size != 3 || items[2].toIntOrNull() == null) {
                     throw WrongServiceStringFormatException(str)
