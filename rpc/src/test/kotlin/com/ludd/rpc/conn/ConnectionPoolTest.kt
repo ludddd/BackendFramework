@@ -1,5 +1,6 @@
 package com.ludd.rpc.conn
 
+import com.google.protobuf.AbstractMessage
 import kotlinx.coroutines.async
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
@@ -7,6 +8,7 @@ import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.Timeout
 import org.mockito.Mockito
+import java.io.InputStream
 import java.util.concurrent.TimeUnit
 
 @Timeout(5, unit = TimeUnit.SECONDS)
@@ -64,5 +66,55 @@ internal class ConnectionPoolTest {
         delay(5)
         assertTrue(socketB.isCompleted)
         assertSame(socketA, socketB.await())
+    }
+
+    @Test
+    fun deletePool() = runBlocking {
+        val factory = closableSocketFactory()
+        val pool = ConnectionPool("", 0, 2, factory)
+        val socketA = pool.connect()
+        pool.close()
+        assertTrue(socketA.isClosed)
+    }
+
+    @Test
+    fun cancelSocketWaitingOnPoolDeletion() = runBlocking {
+        val factory = closableSocketFactory()
+        val pool = ConnectionPool("", 0, 1, factory)
+        pool.connect()
+
+        val socketB = async {
+            assertThrows(ConnectionPoolClosedException::class.java) {
+                runBlocking {
+                    pool.connect()
+                }
+            }
+        }
+        pool.close()
+        socketB.join()
+        Unit
+    }
+
+    private fun closableSocketFactory(): RpcSocketFactory {
+        return object : RpcSocketFactory {
+            override suspend fun connect(host: String, port: Int): RpcSocket {
+                return object : RpcSocket {
+                    override var isClosed: Boolean = false
+
+                    override suspend fun write(msg: AbstractMessage) {
+                        throw NotImplementedError()
+                    }
+
+                    override suspend fun <T> read(msgBuilder: (input: InputStream) -> T): T {
+                        throw NotImplementedError()
+                    }
+
+                    override fun close() {
+                        isClosed = true
+                    }
+
+                }
+            }
+        }
     }
 }
