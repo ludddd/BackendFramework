@@ -35,20 +35,21 @@ open class SocketSession(private val serviceName: String,
 
     override suspend fun call(method: String, arg: ByteArray, sessionContext: SessionContext): CallResult {
         logger.info("Rerouting call to service $serviceName")
-        val socket = connect()
-        val message = Message.InnerRpcRequest.newBuilder()
-            .setService(serviceName)
-            .setMethod(method)
-            .setArg(ByteString.copyFrom(arg))
-            .setContext(sessionContext.toRequestContext())
-            .setOption(rpcOptions)
-            .build()
-        write(socket, message)
-        val rez = socket.read(Message.RpcResponse::parseDelimitedFrom)
-            ?: throw NoResponseFromServiceException(serviceName)
-        logger.debug("Response from service $serviceName is received")
-        if (rez.hasError) logger.debug("with error: ${rez.error}")
-        return rez.toCallResult()
+        connect().use { socket ->
+            val message = Message.InnerRpcRequest.newBuilder()
+                .setService(serviceName)
+                .setMethod(method)
+                .setArg(ByteString.copyFrom(arg))
+                .setContext(sessionContext.toRequestContext())
+                .setOption(rpcOptions)
+                .build()
+            write(socket, message)
+            val rez = socket.read(Message.RpcResponse::parseDelimitedFrom)
+                ?: throw NoResponseFromServiceException(serviceName)
+            logger.debug("Response from service $serviceName is received")
+            if (rez.hasError) logger.debug("with error: ${rez.error}")
+            return rez.toCallResult()
+        }
     }
 
     private suspend fun write(socket: RpcSocket, msg: Message.InnerRpcRequest) {

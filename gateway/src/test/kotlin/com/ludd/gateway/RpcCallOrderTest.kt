@@ -4,19 +4,23 @@ import com.ludd.rpc.CallResult
 import com.ludd.rpc.IRpcAutoDiscovery
 import com.ludd.rpc.RpcServer
 import com.ludd.rpc.SessionContext
+import com.ludd.rpc.conn.RpcSocketFactory
 import com.ludd.rpc.conn.SocketWrapperFactory
+import com.ludd.rpc.session.PooledSocketFactory
 import com.ludd.rpc.session.SocketSession
 import io.ktor.util.*
 import kotlinx.coroutines.*
 import mu.KotlinLogging
 import org.hamcrest.MatcherAssert.assertThat
 import org.hamcrest.Matchers
-import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.Timeout
+import org.junit.jupiter.params.ParameterizedTest
+import org.junit.jupiter.params.provider.MethodSource
 import org.springframework.boot.test.context.SpringBootTest
 import java.net.InetSocketAddress
 import java.nio.charset.Charset
 import java.util.concurrent.TimeUnit
+import java.util.stream.Stream
 
 private val logger = KotlinLogging.logger {}
 
@@ -34,11 +38,20 @@ open class MockAutoDiscovery(private val function: (arg: ByteArray) -> CallResul
 @SpringBootTest
 class RpcCallOrderTest {
 
+    companion object {
+        @JvmStatic
+        private fun multipleCallAtOnce(): Stream<RpcSocketFactory> = Stream.of(
+            SocketWrapperFactory(),
+            PooledSocketFactory(5)
+        )
+    }
+
     @Suppress("EXPERIMENTAL_API_USAGE")
     @OptIn(KtorExperimentalAPI::class)
-    @Test
     @Timeout(1, unit = TimeUnit.MINUTES)
-    fun multipleCallAtOnce() = runBlocking {
+    @ParameterizedTest
+    @MethodSource
+    fun multipleCallAtOnce(socketFactory: RpcSocketFactory) = runBlocking {
         val threadPool = newFixedThreadPoolContext(10, "test")
 
         val autoDiscovery = MockAutoDiscovery {
@@ -50,7 +63,6 @@ class RpcCallOrderTest {
         val server = RpcServer(autoDiscovery, Integer(port))
         server.start()
 
-        val socketFactory = SocketWrapperFactory()
         val connection = SocketSession("test", "localhost", port, false, socketFactory)
         val service = ProxyRpcService(connection)
 

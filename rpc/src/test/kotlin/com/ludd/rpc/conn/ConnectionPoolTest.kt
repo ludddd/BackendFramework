@@ -5,8 +5,11 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.Timeout
 import org.mockito.Mockito
+import java.util.concurrent.TimeUnit
 
+@Timeout(5, unit = TimeUnit.SECONDS)
 internal class ConnectionPoolTest {
 
     private val factory = object: RpcSocketFactory {
@@ -20,7 +23,6 @@ internal class ConnectionPoolTest {
         val pool = ConnectionPool("", 0, 10, factory)
         val socket = pool.connect()
         assertNotNull(socket)
-        assertTrue(socket.isUsed)
         assertEquals(1, pool.size)
     }
 
@@ -29,7 +31,6 @@ internal class ConnectionPoolTest {
         val pool = ConnectionPool("", 0, 10, factory)
         val socket = pool.connect()
         socket.close()
-        assertEquals(0, pool.usedCount)
         assertEquals(1, pool.size)
     }
 

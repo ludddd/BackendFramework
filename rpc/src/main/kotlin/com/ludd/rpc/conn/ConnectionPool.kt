@@ -1,71 +1,63 @@
 package com.ludd.rpc.conn
 
-import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
-import kotlinx.coroutines.withContext
+import mu.KotlinLogging
+import java.io.Closeable
+
+private val logger = KotlinLogging.logger {}
 
 class ConnectionPool(private val host: String,
                      private val port: Int,
                      private val capacity: Int,
-                     private val socketFactory: RpcSocketFactory) {
+                     private val socketFactory: RpcSocketFactory): Closeable {
 
     private val pool = mutableListOf<PooledSocket>()
     private val lock = Mutex()
-    private val freeSocketChannel = Channel<PooledSocket>()
+    private val freeSocketChannel = Channel<PooledSocket>(capacity)
 
+    @OptIn(ExperimentalCoroutinesApi::class)
     suspend fun connect(): PooledSocket {
-        while (true) {
-            lock.withLock {
-                var socket = pool.find { !it.isUsed }
-                if (socket != null) return alloc(socket)
-                if (pool.size < capacity) {
-                    socket = PooledSocket(socketFactory.connect(host, port), this)
-                    pool.add(socket)
-                    return alloc(socket)
-                }
-            }
-            freeSocketChannel.receive()
+        val socket = freeSocketChannel.poll()
+        if (socket != null) {
+            return socket
         }
+        lock.withLock {
+            if (pool.size < capacity) {
+                return allocate()
+            }
+        }
+        return freeSocketChannel.receive()
+    }
+
+    private suspend fun allocate(): PooledSocket {
+        val socket = PooledSocket(socketFactory.connect(host, port), this)
+        pool.add(socket)
+        return socket
     }
 
     fun free(socket: PooledSocket) {
         require(pool.contains(socket))
-        assert(socket.isUsed)
-        socket.isUsed = false
         freeSocketChannel.offer(socket)
-    }
-
-    private fun alloc(socket: PooledSocket): PooledSocket {
-        assert(!socket.isUsed)
-        socket.isUsed = true
-        return socket
+        logger.debug("socket is freed")
     }
 
     val size: Int
         get() = pool.size
 
-    val usedCount: Int
-        get() = runBlocking {
-            lock.withLock {
-                return@runBlocking pool.count { it.isUsed }
-            }
-        }
+    override fun close() {
+        //TODO: wait for all sockets to free and delete them
+    }
 }
 
 class PooledSocket(
     private val socket: RpcSocket,
     private val pool: ConnectionPool): RpcSocket by socket {
 
-    @Volatile
-    var isUsed: Boolean = false
-
     override fun close() = runBlocking{
-        withContext(Dispatchers.IO) {
-            socket.close()
-        }
         pool.free(this@PooledSocket)
     }
 }
