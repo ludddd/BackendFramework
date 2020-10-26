@@ -15,11 +15,11 @@ import java.nio.charset.Charset
 import kotlin.test.assertTrue
 
 @SpringBootTest(properties = ["rpc.ackEnabled=true"])
-class SocketSessionAckTest {
+class RemoteRpcServiceAckTest {
 
     private val port = 9000
     @Autowired
-    private lateinit var factoryConstructor: SessionProvider
+    private lateinit var factoryConstructor: RemoteRpcServiceConstructor
 
     @Test
     fun call() = runBlocking {
@@ -28,7 +28,7 @@ class SocketSessionAckTest {
         val server = createServer { CallResult("bbb".toByteArray(Charset.defaultCharset()), null) }
         server.start()
         val session = factoryConstructor.create("test", "localhost", 9000)
-        assertTrue((session as SocketSession).ackEnabled)
+        assertTrue(session.ackEnabled)
 
         val rez = session.call("test", "aaa".toByteArray(Charset.defaultCharset()), SessionContext(InetSocketAddress(0)))
         Assertions.assertNull(rez.error)

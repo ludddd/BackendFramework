@@ -2,6 +2,7 @@ package com.ludd.rpc.session
 
 import com.google.protobuf.ByteString
 import com.ludd.rpc.CallResult
+import com.ludd.rpc.IRpcService
 import com.ludd.rpc.SessionContext
 import com.ludd.rpc.conn.RpcSocket
 import com.ludd.rpc.conn.RpcSocketFactory
@@ -15,11 +16,11 @@ private val logger = KotlinLogging.logger {}
 class NoResponseFromServiceException(serviceName: String): Exception("No response from service $serviceName")
 class ConnectionLost: Exception("Connection is lost")
 
-open class SocketSession(private val serviceName: String,
-                         override val host: String,
-                         override val port: Int,
-                         val ackEnabled: Boolean,
-                         private val socketFactory: RpcSocketFactory): Session {
+open class RemoteRpcService(private val serviceName: String,
+                            val host: String,
+                            val port: Int,
+                            val ackEnabled: Boolean,
+                            private val socketFactory: RpcSocketFactory): IRpcService {
 
     private val rpcOptions = Message.RequestOption.newBuilder().setAckEnabled(ackEnabled).build()
 
@@ -70,6 +71,9 @@ open class SocketSession(private val serviceName: String,
             CallResult(null, error)
         else
             CallResult(result.toByteArray(), null)
+
+    val url: String
+        get() = "$host:$port"
 }
 
 fun SessionContext.toRequestContext(): Message.RequestContext {

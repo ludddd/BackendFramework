@@ -7,7 +7,7 @@ import com.ludd.rpc.SessionContext
 import com.ludd.rpc.conn.RpcSocketFactory
 import com.ludd.rpc.conn.SocketWrapperFactory
 import com.ludd.rpc.session.PooledSocketFactory
-import com.ludd.rpc.session.SocketSession
+import com.ludd.rpc.session.RemoteRpcService
 import io.ktor.util.*
 import kotlinx.coroutines.*
 import mu.KotlinLogging
@@ -63,8 +63,7 @@ class RpcCallOrderTest {
         val server = RpcServer(autoDiscovery, Integer(port))
         server.start()
 
-        val connection = SocketSession("test", "localhost", port, false, socketFactory)
-        val service = ProxyRpcService(connection)
+        val service = RemoteRpcService("test", "localhost", port, false, socketFactory)
 
         (1..5).forEach { _ ->
             val data = (1..10).map { it.toString() }
@@ -85,7 +84,7 @@ class RpcCallOrderTest {
     private fun CoroutineScope.callRpcAsync(
         threadPool: ExecutorCoroutineDispatcher,
         barrier: CompletableJob,
-        service: ProxyRpcService,
+        service: RemoteRpcService,
         arg: String
     ): Deferred<String?> {
         return async(threadPool) {

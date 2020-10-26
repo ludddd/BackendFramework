@@ -18,11 +18,11 @@ import java.nio.charset.Charset
 private val logger = KotlinLogging.logger {}
 
 @SpringBootTest(properties = ["rpc.ackEnabled=false"])
-internal class SocketSessionTest {
+internal class RemoteRpcServiceTest {
 
     private val port = 9000
     @Autowired
-    private lateinit var factoryConstructor: SessionProvider
+    private lateinit var factoryConstructor: RemoteRpcServiceConstructor
 
     private fun createServer(function: () -> CallResult): RpcServer {
         val autoDiscovery = object: IRpcAutoDiscovery {
@@ -96,7 +96,7 @@ internal class SocketSessionTest {
         Unit
     }
 
-    private suspend fun createSession(): Session {
+    private suspend fun createSession(): RemoteRpcService {
         return factoryConstructor.create("test", "localhost", 9000)
     }
 

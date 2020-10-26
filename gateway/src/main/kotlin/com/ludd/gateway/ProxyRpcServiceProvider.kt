@@ -4,7 +4,8 @@ import com.ludd.rpc.IRpcService
 import com.ludd.rpc.IRpcServiceProvider
 import com.ludd.rpc.NoServiceException
 import com.ludd.rpc.RpcAutoDiscovery
-import com.ludd.rpc.session.SessionProvider
+import com.ludd.rpc.session.RemoteRpcService
+import com.ludd.rpc.session.RemoteRpcServiceConstructor
 import io.ktor.util.*
 import io.kubernetes.client.openapi.Configuration
 import io.kubernetes.client.openapi.apis.CoreV1Api
@@ -29,11 +30,11 @@ class ProxyRpcServiceProvider(
     @Value("\${gateway.services:}") private val servicesInProperties: List<String>
     ): IRpcServiceProvider {
 
-    private val services = mutableMapOf<String, ProxyRpcService>()
+    private val services = mutableMapOf<String, RemoteRpcService>()
     @Autowired
     private lateinit var autoDiscovery: RpcAutoDiscovery
     @Autowired
-    private lateinit var sessionProvider: SessionProvider
+    private lateinit var remoteRpcServiceConstructor: RemoteRpcServiceConstructor
 
     override fun get(service: String): IRpcService {
         if (autoDiscovery.hasService(service)) return autoDiscovery.getService(service)
@@ -50,14 +51,14 @@ class ProxyRpcServiceProvider(
             }
         }
 
-    private fun servicesFromProperties(): Map<String, ProxyRpcService> {
+    private fun servicesFromProperties(): Map<String, RemoteRpcService> {
         return servicesInProperties
             .map { ServiceDescriptor.read(it) }
-            .map { it.name to ProxyRpcService(sessionProvider.create(it.name, it.host, it.port)) }
+            .map { it.name to remoteRpcServiceConstructor.create(it.name, it.host, it.port) }
             .toMap()
     }
 
-    private suspend fun discover(): Map<String, ProxyRpcService> {
+    private suspend fun discover(): Map<String, RemoteRpcService> {
         try {
             val client = withContext(Dispatchers.IO) {ClientBuilder.cluster().build()}
             Configuration.setDefaultApiClient(client)
@@ -77,7 +78,7 @@ class ProxyRpcServiceProvider(
                         null
                     }
                     else -> {
-                        name to ProxyRpcService(sessionProvider.create(name, name, port.intValue))
+                        name to remoteRpcServiceConstructor.create(name, name, port.intValue)
                     }
                 }
             }.toMap()
