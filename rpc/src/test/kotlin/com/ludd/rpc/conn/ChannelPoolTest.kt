@@ -11,7 +11,7 @@ import org.mockito.Mockito
 import java.io.InputStream
 import java.util.concurrent.TimeUnit
 
-@Timeout(5, unit = TimeUnit.SECONDS)
+@Timeout(10, unit = TimeUnit.SECONDS)
 internal class ChannelPoolTest {
 
     private val factory = object: ChannelProvider {
