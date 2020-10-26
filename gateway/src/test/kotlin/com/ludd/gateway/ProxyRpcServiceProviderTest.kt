@@ -2,7 +2,6 @@ package com.ludd.gateway
 
 import com.ludd.gateway.util.sendEchoMessage
 import com.ludd.rpc.EchoServer
-import com.ludd.rpc.session.SessionProvider
 import io.ktor.network.selector.*
 import io.ktor.network.sockets.*
 import io.ktor.util.*
@@ -39,8 +38,6 @@ internal class ProxyRpcServiceProviderTest {
     @Autowired
     private lateinit var proxyRpcServiceProvider: ProxyRpcServiceProvider
 
-    @Autowired
-    private lateinit var factoryConstructor: SessionProvider
 
     @Test
     fun echo() = runBlocking{
@@ -82,12 +79,12 @@ internal class ProxyRpcServiceProviderTest {
     @Test
     fun parseServiceString() {
         Assertions.assertThrows(WrongServiceStringFormatException::class.java)
-            {ProxyRpcServiceProvider.ServiceProxy.parse("aaa", factoryConstructor)}
+            {ProxyRpcServiceProvider.ServiceDescriptor.read("aaa")}
         Assertions.assertThrows(WrongServiceStringFormatException::class.java)
-            {ProxyRpcServiceProvider.ServiceProxy.parse("a:b:c:d", factoryConstructor)}
+            {ProxyRpcServiceProvider.ServiceDescriptor.read("a:b:c:d")}
         Assertions.assertThrows(WrongServiceStringFormatException::class.java)
-            {ProxyRpcServiceProvider.ServiceProxy.parse("a:b:c", factoryConstructor)}
-        val parsed = ProxyRpcServiceProvider.ServiceProxy.parse("aaa:bbb:10", factoryConstructor)
+            {ProxyRpcServiceProvider.ServiceDescriptor.read("a:b:c")}
+        val parsed = ProxyRpcServiceProvider.ServiceDescriptor.read("aaa:bbb:10")
         assertEquals("aaa", parsed.name)
         assertEquals("bbb", parsed.host)
         assertEquals(10, parsed.port)

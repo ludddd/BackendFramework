@@ -4,7 +4,6 @@ import com.ludd.rpc.IRpcService
 import com.ludd.rpc.IRpcServiceProvider
 import com.ludd.rpc.NoServiceException
 import com.ludd.rpc.RpcAutoDiscovery
-import com.ludd.rpc.session.Session
 import com.ludd.rpc.session.SessionProvider
 import io.ktor.util.*
 import io.kubernetes.client.openapi.Configuration
@@ -30,7 +29,7 @@ class ProxyRpcServiceProvider(
     @Value("\${gateway.services:}") private val servicesInProperties: List<String>
     ): IRpcServiceProvider {
 
-    private val services = mutableListOf<ServiceProxy>()
+    private val services = mutableMapOf<String, ProxyRpcService>()
     @Autowired
     private lateinit var autoDiscovery: RpcAutoDiscovery
     @Autowired
@@ -38,22 +37,27 @@ class ProxyRpcServiceProvider(
 
     override fun get(service: String): IRpcService {
         if (autoDiscovery.hasService(service)) return autoDiscovery.getService(service)
-        return services.find { it.name == service }?.proxy ?: throw NoServiceException(service)
+        return services[service] ?: throw NoServiceException(service)
     }
 
     @PostConstruct
     fun init() = runBlocking {
-            services.addAll(servicesFromProperties())
-            services.addAll(discover())
+            servicesFromProperties().forEach {
+                services[it.key] = it.value
+            }
+            discover().forEach {
+                services[it.key] = it.value
+            }
         }
 
-    private fun servicesFromProperties(): List<ServiceProxy> {
-        return servicesInProperties.map {
-            ServiceProxy.parse(it, sessionProvider)
-        }
+    private fun servicesFromProperties(): Map<String, ProxyRpcService> {
+        return servicesInProperties
+            .map { ServiceDescriptor.read(it) }
+            .map { it.name to ProxyRpcService(sessionProvider.create(it.name, it.host, it.port)) }
+            .toMap()
     }
 
-    private suspend fun discover(): List<ServiceProxy> {
+    private suspend fun discover(): Map<String, ProxyRpcService> {
         try {
             val client = withContext(Dispatchers.IO) {ClientBuilder.cluster().build()}
             Configuration.setDefaultApiClient(client)
@@ -73,34 +77,33 @@ class ProxyRpcServiceProvider(
                         null
                     }
                     else -> {
-                        ServiceProxy(name, name, port.intValue, sessionProvider.create(name, name, port.intValue))
+                        name to ProxyRpcService(sessionProvider.create(name, name, port.intValue))
                     }
                 }
-            }
+            }.toMap()
         } catch (e: Exception) {
             logger.error(e) { "failed to get list of services" }
-            return emptyList()
+            return emptyMap()
         }
     }
 
-    class ServiceProxy(val name: String,
-                       val host: String,
-                       val port: Int,
-                       session: Session) {
-        val proxy: ProxyRpcService by lazy { ProxyRpcService(session) }
+    data class ServiceDescriptor(val name: String,
+                                 val host: String,
+                                 val port: Int) {
 
         companion object {
-            fun parse(str: String, constructor: SessionProvider): ServiceProxy {
+            fun read(str: String): ServiceDescriptor {
                 val items = str.split(":")
                 if (items.size != 3 || items[2].toIntOrNull() == null) {
                     throw WrongServiceStringFormatException(str)
                 }
-                return ServiceProxy(items[0], items[1], items[2].toInt(), constructor.create(items[0], items[1], items[2].toInt()))
+                return ServiceDescriptor(items[0], items[1], items[2].toInt())
             }
         }
+
     }
 
-    fun servicesList() = services.map { "${it.name}:${it.host}:${it.port}" }
+    fun servicesList() = services.map { "${it.key}:${it.value.url}" }
 }
 
 class WrongServiceStringFormatException(value: String): java.lang.Exception("Wrong service string format: $value. Expecting: 'name:host:port'")

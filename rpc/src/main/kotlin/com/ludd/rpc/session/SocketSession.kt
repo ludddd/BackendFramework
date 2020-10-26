@@ -16,8 +16,8 @@ class NoResponseFromServiceException(serviceName: String): Exception("No respons
 class ConnectionLost: Exception("Connection is lost")
 
 open class SocketSession(private val serviceName: String,
-                         private val host: String,
-                         private val port: Int,
+                         override val host: String,
+                         override val port: Int,
                          val ackEnabled: Boolean,
                          private val socketFactory: RpcSocketFactory): Session {
 

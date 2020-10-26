@@ -17,5 +17,8 @@ class ProxyRpcService(
     override suspend fun call(method: String, arg: ByteArray, sessionContext: SessionContext): CallResult {
         return session.call(method, arg, sessionContext)
     }
+
+    val url: String
+        get() = "${session.host}:${session.port}"
 }
 
