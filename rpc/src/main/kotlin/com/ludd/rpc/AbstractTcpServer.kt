@@ -29,9 +29,9 @@ abstract class AbstractTcpServer(private val port:Int, private val shutdownTimeo
 
     fun start() {
         logger.info("Starting tcp server at port: $port")
+        val serverSocket = aSocket(selectorManager).tcp().bind(port = getPort())
+        logger.info("${this@AbstractTcpServer.javaClass.name} listening at ${serverSocket.localAddress}")
         serverJob = launch(threadPool) {
-            val serverSocket = aSocket(selectorManager).tcp().bind(port = getPort())
-            logger.info("${this@AbstractTcpServer.javaClass.name} listening at ${serverSocket.localAddress}")
             serverSocket.use {
                 while (isActive) {
                     val socket = serverSocket.accept()
