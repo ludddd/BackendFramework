@@ -10,6 +10,7 @@ import org.junit.jupiter.api.Timeout
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.test.annotation.DirtiesContext
+import org.springframework.util.SocketUtils
 import java.time.Duration
 import java.util.concurrent.TimeUnit
 
@@ -45,7 +46,7 @@ class ApplicationTest {
 
     @Test
     fun startServer() {
-        @Suppress("DEPRECATION") val server = Server(autoDiscovery, Integer(9000))
+        @Suppress("DEPRECATION") val server = Server(autoDiscovery, Integer(SocketUtils.findAvailableTcpPort()))
         server.start()
         server.stop()
     }
