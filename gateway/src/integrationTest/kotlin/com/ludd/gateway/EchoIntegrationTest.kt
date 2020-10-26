@@ -1,12 +1,10 @@
 package com.ludd.gateway
 
 import com.google.protobuf.ByteString
-import com.ludd.rpc.conn.tcpConnect
+import com.ludd.rpc.TestClient
 import com.ludd.rpc.to.Message
 import com.ludd.test_utils.KGenericContainer
-import io.ktor.network.selector.*
 import io.ktor.util.*
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
 import mu.KotlinLogging
 import org.junit.jupiter.api.AfterEach
@@ -44,19 +42,18 @@ class EchoIntegrationTest {
     @Test
     @Timeout(1, unit = TimeUnit.MINUTES)
     fun directConnect() = runBlocking{
-        val selectorManager = ActorSelectorManager(Dispatchers.IO)
         val port = echo.firstMappedPort
         logger.info("Connecting to ${echo.host}:$port")
-        val socket = selectorManager.tcpConnect(echo.host, port)
+        val client = TestClient(echo.host, port)
 
         val message = Message.RpcRequest
             .newBuilder()
             .setService("echo")
             .setArg(ByteString.copyFrom("aaa", Charset.defaultCharset()))
             .build()
-        socket.write(message)
+        client.send(message)
 
-        val response =  socket.read(Message.RpcResponse::parseDelimitedFrom)
+        val response = client.receive(Message.RpcResponse::parseDelimitedFrom)
         kotlin.test.assertEquals("aaa", response.result.toString(Charset.defaultCharset()))
     }
 }
