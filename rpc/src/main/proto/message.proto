@@ -15,10 +15,15 @@ message RpcRequest {
 message RpcResponse {
     bytes result = 1;
     string error = 2;
+    bool hasError = 3;
 }
 
 message RequestContext {
     string playerId = 1;
+}
+
+message RequestOption {
+    bool ackEnabled = 1;
 }
 
 message InnerRpcRequest {
@@ -26,4 +31,12 @@ message InnerRpcRequest {
     string method = 2;
     bytes arg = 3;
     RequestContext context = 4;
+    RequestOption option = 5;
+}
+
+message RpcReceiveAck {
+    enum Code {
+        Ok = 0;
+    }
+    Code code = 1;
 }

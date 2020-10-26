@@ -1,0 +1,30 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: fail
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: fail
+  minReadySeconds: 5
+  template:
+    metadata:
+      labels:
+        app: fail
+    spec:
+      containers:
+        - name: fail
+          image: ludd.fail:0.1
+          ports:
+            - containerPort: 9001
+          readinessProbe:
+            tcpSocket:
+              port: 9001
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          livenessProbe:
+            tcpSocket:
+              port: 9001
+            initialDelaySeconds: 15
+            periodSeconds: 60

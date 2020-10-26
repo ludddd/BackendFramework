@@ -2,6 +2,7 @@ package com.ludd.player
 
 import com.ludd.auth.to.Auth
 import com.ludd.player.to.Player
+import com.ludd.rpc.TestClient
 import com.ludd.rpc.to.Message
 import io.ktor.util.*
 import kotlinx.coroutines.runBlocking

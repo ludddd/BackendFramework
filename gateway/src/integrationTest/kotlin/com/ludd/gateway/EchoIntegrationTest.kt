@@ -1,15 +1,11 @@
 package com.ludd.gateway
 
 import com.google.protobuf.ByteString
+import com.ludd.rpc.TestClient
 import com.ludd.rpc.to.Message
 import com.ludd.test_utils.KGenericContainer
-import io.ktor.network.selector.*
-import io.ktor.network.sockets.*
 import io.ktor.util.*
-import io.ktor.utils.io.jvm.javaio.*
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
-import kotlinx.coroutines.withContext
 import mu.KotlinLogging
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
@@ -46,25 +42,18 @@ class EchoIntegrationTest {
     @Test
     @Timeout(1, unit = TimeUnit.MINUTES)
     fun directConnect() = runBlocking{
-        val selectorManager = ActorSelectorManager(Dispatchers.IO)
         val port = echo.firstMappedPort
         logger.info("Connecting to ${echo.host}:$port")
-        val socket = aSocket(selectorManager).tcp().connect(echo.host, port)
-        val write = socket.openWriteChannel(autoFlush = true)
-        val read = socket.openReadChannel()
+        val client = TestClient(echo.host, port)
 
         val message = Message.RpcRequest
             .newBuilder()
             .setService("echo")
             .setArg(ByteString.copyFrom("aaa", Charset.defaultCharset()))
             .build()
-        withContext(Dispatchers.IO) {
-            message.writeDelimitedTo(write.toOutputStream())
-        }
+        client.send(message)
 
-        val response = withContext(Dispatchers.IO) {
-            Message.RpcResponse.parseDelimitedFrom(read.toInputStream())
-        }
+        val response = client.receive(Message.RpcResponse::parseDelimitedFrom)
         kotlin.test.assertEquals("aaa", response.result.toString(Charset.defaultCharset()))
     }
 }

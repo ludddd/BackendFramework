@@ -16,7 +16,10 @@ private val logger = KotlinLogging.logger {}
 @Suppress("EXPERIMENTAL_API_USAGE")
 open class RpcServer(private val autoDiscovery: IRpcAutoDiscovery,
                 @Suppress("PLATFORM_CLASS_MAPPED_TO_KOTLIN")
-                port: Integer): AbstractTcpServer(port.toInt()) {
+                port: Integer,
+                 shutdownTimeoutMs: Long = 30_000): AbstractTcpServer(port.toInt(), shutdownTimeoutMs) {
+
+    private val ack = Message.RpcReceiveAck.newBuilder().setCode(Message.RpcReceiveAck.Code.Ok).build()
 
     @OptIn(KtorExperimentalAPI::class)
     override suspend fun processMessages(
@@ -24,9 +27,7 @@ open class RpcServer(private val autoDiscovery: IRpcAutoDiscovery,
         write: ByteWriteChannel,
         sessionContext: SessionContext
     ) {
-        val inMessage = withContext(Dispatchers.IO) {
-            Message.InnerRpcRequest.parseDelimitedFrom(read.toInputStream(coroutineContext[Job]))
-        }
+        val inMessage = receiveMessage(read, write)
         logger.debug("Rpc call ${inMessage.service}:${inMessage.method} is received")
         val responseBuilder = Message.RpcResponse.newBuilder()
         try {
@@ -41,13 +42,34 @@ open class RpcServer(private val autoDiscovery: IRpcAutoDiscovery,
             logger.error(e) {
                 "Error while calling service ${inMessage.service} method ${inMessage.method} with context ${inMessage.context}"
             }
+            responseBuilder.hasError = true
             responseBuilder.error = e.toString()
         }
-        if (responseBuilder.error != null) {
+        if (responseBuilder.hasError) {
             logger.debug("Responding to ${inMessage.service}:${inMessage.method} call with error: ${responseBuilder.error}")
         }
         withContext(Dispatchers.IO) {
             responseBuilder.build().writeDelimitedTo(write.toOutputStream(coroutineContext[Job]))
+            write.flush()
+        }
+    }
+
+    private suspend fun receiveMessage(
+        read: ByteReadChannel,
+        write: ByteWriteChannel
+    ): Message.InnerRpcRequest {
+        val inMessage = withContext(Dispatchers.IO) {
+            Message.InnerRpcRequest.parseDelimitedFrom(read.toInputStream(coroutineContext[Job]))
+        }
+        if (inMessage.option.ackEnabled) {
+            sendAcknowledge(write)
+        }
+        return inMessage
+    }
+
+    private suspend fun sendAcknowledge(write: ByteWriteChannel) {
+        withContext(Dispatchers.IO) {
+            ack.writeDelimitedTo(write.toOutputStream(coroutineContext[Job]))
             write.flush()
         }
     }
@@ -57,6 +79,7 @@ open class RpcServer(private val autoDiscovery: IRpcAutoDiscovery,
     ) {
         if (rez.error != null) {
             logger.debug("CallResult has error: ${rez.error}")
+            hasError = true
             error = rez.error
         } else {
             result = ByteString.copyFrom(rez.result)

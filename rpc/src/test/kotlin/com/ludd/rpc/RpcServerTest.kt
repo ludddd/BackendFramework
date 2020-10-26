@@ -2,6 +2,7 @@ package com.ludd.rpc
 
 import com.google.protobuf.ByteString
 import com.ludd.rpc.to.Message
+import com.ludd.test_util.MockAutoDiscovery
 import com.ludd.test_util.toInputChannel
 import com.ludd.test_util.toInputStream
 import io.ktor.utils.io.*
@@ -18,17 +19,7 @@ import java.nio.charset.Charset
 import java.util.stream.Stream
 import kotlin.test.assertEquals
 import kotlin.test.assertNull
-
-open class MockAutoDiscovery(private val function: () -> CallResult) : IRpcAutoDiscovery {
-    override suspend fun call(
-        service: String,
-        method: String,
-        arg: ByteArray,
-        sessionContext: SessionContext
-    ): CallResult {
-        return function()
-    }
-}
+import kotlin.test.assertTrue
 
 @SpringBootTest
 class RpcServerTest {
@@ -54,6 +45,31 @@ class RpcServerTest {
         )
         val outMsg = withContext(Dispatchers.IO) {
             Message.RpcResponse.parseDelimitedFrom(output.toInputStream())
+        }
+        assertEquals("bbb", outMsg.result.toString(Charset.defaultCharset()))
+        Unit
+    }
+
+    @Test
+    fun rpcAcknowledge() = runBlocking {
+        val autoDiscovery = mockService {
+            CallResult("bbb".toByteArray(Charset.defaultCharset()), null)
+        }
+        @Suppress("DEPRECATION")
+        val server = RpcServer(autoDiscovery, Integer(0))
+        val output = ByteChannel()
+        server.processMessages(
+            rpcRequest(Message.RequestOption.newBuilder().setAckEnabled(true).build()).toInputChannel(),
+            output,
+            SessionContext(InetSocketAddress.createUnresolved("", 0))
+        )
+        val inputStream = output.toInputStream()
+        val ack = withContext(Dispatchers.IO) {
+            Message.RpcReceiveAck.parseDelimitedFrom(inputStream)
+        }
+        assertEquals(Message.RpcReceiveAck.Code.Ok, ack.code)
+        val outMsg = withContext(Dispatchers.IO) {
+            Message.RpcResponse.parseDelimitedFrom(inputStream)
         }
         assertEquals("bbb", outMsg.result.toString(Charset.defaultCharset()))
         Unit
@@ -105,10 +121,11 @@ class RpcServerTest {
         val outMsg = withContext(Dispatchers.IO) {
             Message.RpcResponse.parseDelimitedFrom(output.toInputStream())
         }
+        assertTrue(outMsg.hasError)
         assertEquals("error", outMsg.error)
     }
 
-    private fun rpcRequest(): Message.InnerRpcRequest {
+    private fun rpcRequest(option: Message.RequestOption = Message.RequestOption.newBuilder().build()): Message.InnerRpcRequest {
         return Message.InnerRpcRequest.newBuilder()
             .setService("serviceA")
             .setMethod("methodA")
@@ -117,6 +134,7 @@ class RpcServerTest {
                 Message.RequestContext.newBuilder()
                     .setPlayerId("playerA")
             )
+            .setOption(option)
             .build()
     }
 

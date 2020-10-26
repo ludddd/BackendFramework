@@ -81,6 +81,7 @@ class RpcAutoDiscovery : IRpcAutoDiscovery {
         service: String,
         method: String
     ): CallResult {
+        logger.debug("Converting response of type: ${rez?.javaClass.toString()}")
         return when (rez) {
             is ByteArray -> CallResult(rez, null)
             is AbstractMessage -> serializeMessage(rez) //TODO: what if serialized message has error string?

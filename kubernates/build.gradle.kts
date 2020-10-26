@@ -20,6 +20,7 @@ val launchKubernates = tasks.create<Exec>("launchKubernates") {
     dependsOn(":gateway:dockerBuildImage")
     dependsOn(":player:dockerBuildImage")
     dependsOn(":mongo:buildImage")
+    dependsOn(":fail:dockerBuildImage")
 }
 
 //this tasks just wait for kubernates to start all pods launched by launchKubernates task
