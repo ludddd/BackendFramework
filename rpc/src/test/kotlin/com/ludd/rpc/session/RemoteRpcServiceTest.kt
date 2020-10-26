@@ -12,6 +12,7 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
+import org.springframework.util.SocketUtils
 import java.net.InetSocketAddress
 import java.nio.charset.Charset
 
@@ -20,7 +21,7 @@ private val logger = KotlinLogging.logger {}
 @SpringBootTest(properties = ["rpc.ackEnabled=false"])
 internal class RemoteRpcServiceTest {
 
-    private val port = 9000
+    private val port = SocketUtils.findAvailableTcpPort()
     @Autowired
     private lateinit var factoryConstructor: RemoteRpcServiceConstructor
 
@@ -97,7 +98,7 @@ internal class RemoteRpcServiceTest {
     }
 
     private suspend fun createSession(): RemoteRpcService {
-        return factoryConstructor.create("test", "localhost", 9000)
+        return factoryConstructor.create("test", "localhost", port)
     }
 
     @Test
