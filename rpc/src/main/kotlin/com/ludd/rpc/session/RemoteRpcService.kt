@@ -4,8 +4,8 @@ import com.google.protobuf.ByteString
 import com.ludd.rpc.CallResult
 import com.ludd.rpc.IRpcService
 import com.ludd.rpc.SessionContext
-import com.ludd.rpc.conn.RpcSocket
-import com.ludd.rpc.conn.RpcSocketFactory
+import com.ludd.rpc.conn.Channel
+import com.ludd.rpc.conn.ChannelProvider
 import com.ludd.rpc.to.Message
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -20,23 +20,13 @@ open class RemoteRpcService(private val serviceName: String,
                             val host: String,
                             val port: Int,
                             val ackEnabled: Boolean,
-                            private val socketFactory: RpcSocketFactory): IRpcService {
+                            private val channelProvider: ChannelProvider): IRpcService {
 
     private val rpcOptions = Message.RequestOption.newBuilder().setAckEnabled(ackEnabled).build()
 
-    private suspend fun connect(): RpcSocket {
-        logger.info("Connecting to $host:$port")
-        return try {
-            socketFactory.connect(host, port)
-        } catch (e: Exception) {
-            logger.error(e) {"error while connecting to $host:$port"}
-            throw e
-        }
-    }
-
     override suspend fun call(method: String, arg: ByteArray, sessionContext: SessionContext): CallResult {
         logger.info("Rerouting call to service $serviceName")
-        connect().use { socket ->
+        channelProvider.acquire(host, port).use { channel ->
             val message = Message.InnerRpcRequest.newBuilder()
                 .setService(serviceName)
                 .setMethod(method)
@@ -44,8 +34,8 @@ open class RemoteRpcService(private val serviceName: String,
                 .setContext(sessionContext.toRequestContext())
                 .setOption(rpcOptions)
                 .build()
-            write(socket, message)
-            val rez = socket.read(Message.RpcResponse::parseDelimitedFrom)
+            write(channel, message)
+            val rez = channel.read(Message.RpcResponse::parseDelimitedFrom)
                 ?: throw NoResponseFromServiceException(serviceName)
             logger.debug("Response from service $serviceName is received")
             if (rez.hasError) logger.debug("with error: ${rez.error}")
@@ -53,13 +43,13 @@ open class RemoteRpcService(private val serviceName: String,
         }
     }
 
-    private suspend fun write(socket: RpcSocket, msg: Message.InnerRpcRequest) {
-        socket.write(msg)
+    private suspend fun write(channel: Channel, msg: Message.InnerRpcRequest) {
+        channel.write(msg)
         if (ackEnabled) {
-            val ack = socket.read(Message.RpcReceiveAck::parseDelimitedFrom)
+            val ack = channel.read(Message.RpcReceiveAck::parseDelimitedFrom)
             if (ack == null) {
                 withContext(Dispatchers.IO) {
-                    socket.close()
+                    channel.close()
                 }
                 throw ConnectionLost()
             }

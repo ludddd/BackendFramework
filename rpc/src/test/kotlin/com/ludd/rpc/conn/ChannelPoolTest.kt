@@ -12,45 +12,45 @@ import java.io.InputStream
 import java.util.concurrent.TimeUnit
 
 @Timeout(5, unit = TimeUnit.SECONDS)
-internal class ConnectionPoolTest {
+internal class ChannelPoolTest {
 
-    private val factory = object: RpcSocketFactory {
-        override suspend fun connect(host: String, port: Int): RpcSocket {
-            return Mockito.mock(RpcSocket::class.java)
+    private val factory = object: ChannelProvider {
+        override suspend fun acquire(host: String, port: Int): Channel {
+            return Mockito.mock(Channel::class.java)
         }
     }
 
     @Test
     fun connect() = runBlocking{
-        val pool = ConnectionPool("", 0, 10, factory)
-        val socket = pool.connect()
+        val pool = ChannelPool("", 0, 10, factory)
+        val socket = pool.openChannel()
         assertNotNull(socket)
         assertEquals(1, pool.size)
     }
 
     @Test
     fun free() = runBlocking {
-        val pool = ConnectionPool("", 0, 10, factory)
-        val socket = pool.connect()
+        val pool = ChannelPool("", 0, 10, factory)
+        val socket = pool.openChannel()
         socket.close()
         assertEquals(1, pool.size)
     }
 
     @Test
     fun socketReused() = runBlocking {
-        val pool = ConnectionPool("", 0, 10, factory)
-        val socketA = pool.connect()
+        val pool = ChannelPool("", 0, 10, factory)
+        val socketA = pool.openChannel()
         socketA.close()
-        val socketB = pool.connect()
+        val socketB = pool.openChannel()
         assertEquals(1, pool.size)
         assertSame(socketA, socketB)
     }
 
     @Test
     fun capacityReached() = runBlocking {
-        val pool = ConnectionPool("", 0, 1, factory)
-        val socketA = pool.connect()
-        val socketB = async { pool.connect() }
+        val pool = ChannelPool("", 0, 1, factory)
+        val socketA = pool.openChannel()
+        val socketB = async { pool.openChannel() }
         delay(5)
         assertFalse(socketB.isCompleted)
         socketA.close()
@@ -58,9 +58,9 @@ internal class ConnectionPoolTest {
 
     @Test
     fun socketAllocatedWhenFreed() = runBlocking {
-        val pool = ConnectionPool("", 0, 1, factory)
-        val socketA = pool.connect()
-        val socketB = async { pool.connect() }
+        val pool = ChannelPool("", 0, 1, factory)
+        val socketA = pool.openChannel()
+        val socketB = async { pool.openChannel() }
         delay(5)
         socketA.close()
         delay(5)
@@ -71,8 +71,8 @@ internal class ConnectionPoolTest {
     @Test
     fun deletePool() = runBlocking {
         val factory = closableSocketFactory()
-        val pool = ConnectionPool("", 0, 2, factory)
-        val socketA = pool.connect()
+        val pool = ChannelPool("", 0, 2, factory)
+        val socketA = pool.openChannel()
         pool.close()
         assertTrue(socketA.isClosed)
     }
@@ -80,13 +80,13 @@ internal class ConnectionPoolTest {
     @Test
     fun cancelSocketWaitingOnPoolDeletion() = runBlocking {
         val factory = closableSocketFactory()
-        val pool = ConnectionPool("", 0, 1, factory)
-        pool.connect()
+        val pool = ChannelPool("", 0, 1, factory)
+        pool.openChannel()
 
         val socketB = async {
             assertThrows(ConnectionPoolClosedException::class.java) {
                 runBlocking {
-                    pool.connect()
+                    pool.openChannel()
                 }
             }
         }
@@ -95,10 +95,10 @@ internal class ConnectionPoolTest {
         Unit
     }
 
-    private fun closableSocketFactory(): RpcSocketFactory {
-        return object : RpcSocketFactory {
-            override suspend fun connect(host: String, port: Int): RpcSocket {
-                return object : RpcSocket {
+    private fun closableSocketFactory(): ChannelProvider {
+        return object : ChannelProvider {
+            override suspend fun acquire(host: String, port: Int): Channel {
+                return object : Channel {
                     override var isClosed: Boolean = false
 
                     override suspend fun write(msg: AbstractMessage) {

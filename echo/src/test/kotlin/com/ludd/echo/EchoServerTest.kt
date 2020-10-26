@@ -2,7 +2,7 @@ package com.ludd.echo
 
 import com.google.protobuf.ByteString
 import com.ludd.rpc.EchoServer
-import com.ludd.rpc.conn.SocketWrapperFactory
+import com.ludd.rpc.conn.SocketChannelProvider
 import com.ludd.rpc.to.Message
 import io.ktor.util.*
 import kotlinx.coroutines.runBlocking
@@ -22,8 +22,8 @@ internal class EchoServerTest {
 
     @Test
     fun echo() = runBlocking {
-        val socketFactory = SocketWrapperFactory()
-        val socket = socketFactory.connect("127.0.0.1", server.getPort())
+        val socketFactory = SocketChannelProvider()
+        val socket = socketFactory.acquire("127.0.0.1", server.getPort())
 
         val message = Message.RpcRequest
             .newBuilder()

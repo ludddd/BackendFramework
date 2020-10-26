@@ -1,7 +1,7 @@
 package com.ludd.rpc.session
 
-import com.ludd.rpc.conn.RpcSocketFactory
-import com.ludd.rpc.conn.SocketWrapperFactory
+import com.ludd.rpc.conn.ChannelProvider
+import com.ludd.rpc.conn.SocketChannelProvider
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Component
 
@@ -25,9 +25,9 @@ class RemoteRpcServiceConstructor {
         return RemoteRpcService(service, host, port, ackEnabled.booleanValue(), createFactory(factoryType))
     }
 
-    private fun createFactory(type: SocketFactoryType): RpcSocketFactory {
+    private fun createFactory(type: SocketFactoryType): ChannelProvider {
         return when(type) {
-            SocketFactoryType.Simple -> SocketWrapperFactory()
+            SocketFactoryType.Simple -> SocketChannelProvider()
             SocketFactoryType.Pooled -> PooledSocketFactory(connPoolSize.toInt())
         }
     }

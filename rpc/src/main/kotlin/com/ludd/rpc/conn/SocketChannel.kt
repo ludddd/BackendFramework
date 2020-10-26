@@ -10,7 +10,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.io.InputStream
 
-class SocketWrapper(private val socket: Socket) : RpcSocket {
+class SocketChannel(private val socket: Socket) : Channel {
 
     private val write: ByteWriteChannel = socket.openWriteChannel(autoFlush = true)
     private val read: ByteReadChannel = socket.openReadChannel()
@@ -35,12 +35,12 @@ class SocketWrapper(private val socket: Socket) : RpcSocket {
         get() = socket.isClosed || write.isClosedForWrite || read.isClosedForRead
 }
 
-class SocketWrapperFactory: RpcSocketFactory {
+class SocketChannelProvider: ChannelProvider {
     @OptIn(KtorExperimentalAPI::class)
     private val selectorManager = ActorSelectorManager(Dispatchers.IO)
 
-    override suspend fun connect(host: String, port: Int): RpcSocket {
+    override suspend fun acquire(host: String, port: Int): Channel {
         val socket = aSocket(selectorManager).tcp().connect(host, port)
-        return SocketWrapper(socket)
+        return SocketChannel(socket)
     }
 }

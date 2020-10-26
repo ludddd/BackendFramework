@@ -2,7 +2,7 @@ package com.ludd.gateway
 
 import com.ludd.auth.IAuthRepository
 import com.ludd.auth.to.Auth
-import com.ludd.rpc.conn.SocketWrapperFactory
+import com.ludd.rpc.conn.SocketChannelProvider
 import com.ludd.rpc.to.Message
 import io.ktor.util.*
 import kotlinx.coroutines.Dispatchers
@@ -29,8 +29,8 @@ class GatewayAuthTest {
 
     @Test
     fun callAuth() = runBlocking {
-        val socketFactory = SocketWrapperFactory()
-        val socket = socketFactory.connect("127.0.0.1", tcpServer.getPort())
+        val socketFactory = SocketChannelProvider()
+        val socket = socketFactory.acquire("127.0.0.1", tcpServer.getPort())
         val authRequest = Auth.SignInRequest.newBuilder().build()
         val request = Message.RpcRequest
             .newBuilder()

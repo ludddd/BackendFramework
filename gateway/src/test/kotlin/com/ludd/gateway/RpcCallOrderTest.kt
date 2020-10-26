@@ -4,8 +4,8 @@ import com.ludd.rpc.CallResult
 import com.ludd.rpc.IRpcAutoDiscovery
 import com.ludd.rpc.RpcServer
 import com.ludd.rpc.SessionContext
-import com.ludd.rpc.conn.RpcSocketFactory
-import com.ludd.rpc.conn.SocketWrapperFactory
+import com.ludd.rpc.conn.ChannelProvider
+import com.ludd.rpc.conn.SocketChannelProvider
 import com.ludd.rpc.session.PooledSocketFactory
 import com.ludd.rpc.session.RemoteRpcService
 import io.ktor.util.*
@@ -40,8 +40,8 @@ class RpcCallOrderTest {
 
     companion object {
         @JvmStatic
-        private fun multipleCallAtOnce(): Stream<RpcSocketFactory> = Stream.of(
-            SocketWrapperFactory(),
+        private fun multipleCallAtOnce(): Stream<ChannelProvider> = Stream.of(
+            SocketChannelProvider(),
             PooledSocketFactory(5)
         )
     }
@@ -51,7 +51,7 @@ class RpcCallOrderTest {
     @Timeout(1, unit = TimeUnit.MINUTES)
     @ParameterizedTest
     @MethodSource
-    fun multipleCallAtOnce(socketFactory: RpcSocketFactory) = runBlocking {
+    fun multipleCallAtOnce(socketFactory: ChannelProvider) = runBlocking {
         val threadPool = newFixedThreadPoolContext(10, "test")
 
         val autoDiscovery = MockAutoDiscovery {

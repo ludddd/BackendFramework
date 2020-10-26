@@ -2,7 +2,7 @@ package com.ludd.rpc
 
 import com.google.protobuf.AbstractMessage
 import com.google.protobuf.ByteString
-import com.ludd.rpc.conn.SocketWrapperFactory
+import com.ludd.rpc.conn.SocketChannelProvider
 import com.ludd.rpc.to.Message
 import io.ktor.util.*
 import kotlinx.coroutines.Dispatchers
@@ -12,8 +12,8 @@ import java.io.InputStream
 
 class TestClient(private val host: String = "localhost", private val port: Int = 30000) {
     @OptIn(KtorExperimentalAPI::class)
-    private val socketFactory = SocketWrapperFactory()
-    private val socket = runBlocking { socketFactory.connect(host, port) }
+    private val socketFactory = SocketChannelProvider()
+    private val socket = runBlocking { socketFactory.acquire(host, port) }
 
     suspend fun send(msg: AbstractMessage) = socket.write(msg)
 

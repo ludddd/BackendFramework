@@ -1,19 +1,19 @@
 package com.ludd.rpc.session
 
-import com.ludd.rpc.conn.ConnectionPool
-import com.ludd.rpc.conn.RpcSocket
-import com.ludd.rpc.conn.RpcSocketFactory
-import com.ludd.rpc.conn.SocketWrapperFactory
+import com.ludd.rpc.conn.Channel
+import com.ludd.rpc.conn.ChannelPool
+import com.ludd.rpc.conn.ChannelProvider
+import com.ludd.rpc.conn.SocketChannelProvider
 
-class PooledSocketFactory(private val poolSize:Int) : RpcSocketFactory {
-    private val poolMap = mutableMapOf<Pair<String, Int>, ConnectionPool>()
-    private val socketFactory = SocketWrapperFactory()
+class PooledSocketFactory(private val poolSize:Int) : ChannelProvider {
+    private val poolMap = mutableMapOf<Pair<String, Int>, ChannelPool>()
+    private val socketFactory = SocketChannelProvider()
 
-    override suspend fun connect(host: String, port: Int): RpcSocket {
+    override suspend fun acquire(host: String, port: Int): Channel {
         val url = host to port
         if (!poolMap.containsKey(url)) {
-            poolMap[url] = ConnectionPool(host, port, poolSize, socketFactory)
+            poolMap[url] = ChannelPool(host, port, poolSize, socketFactory)
         }
-        return poolMap[url]!!.connect()
+        return poolMap[url]!!.openChannel()
     }
 }

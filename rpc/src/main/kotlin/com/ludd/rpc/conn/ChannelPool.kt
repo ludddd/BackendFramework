@@ -13,18 +13,18 @@ private val logger = KotlinLogging.logger {}
 
 class ConnectionPoolClosedException(cause: Throwable? = null): Exception(cause)
 
-class ConnectionPool(private val host: String,
-                     private val port: Int,
-                     private val capacity: Int,
-                     private val socketFactory: RpcSocketFactory): Closeable {
+class ChannelPool(private val host: String,
+                  private val port: Int,
+                  private val capacity: Int,
+                  private val socketFactory: ChannelProvider): Closeable {
 
-    private val pool = mutableListOf<PooledSocket>()
+    private val pool = mutableListOf<PooledChannel>()
     private val lock = Mutex()
-    private val freeSocketChannel = Channel<PooledSocket>(capacity)
+    private val freeSocketChannel = Channel<PooledChannel>(capacity)
     private val isClosed = AtomicBoolean(false)
 
     @OptIn(ExperimentalCoroutinesApi::class)
-    suspend fun connect(): PooledSocket {
+    suspend fun openChannel(): PooledChannel {
         if (isClosed.get()) throw ConnectionPoolClosedException()
         val socket = freeSocketChannel.poll()
         if (socket != null) {
@@ -42,17 +42,17 @@ class ConnectionPool(private val host: String,
         }
     }
 
-    private suspend fun allocate(): PooledSocket {
-        val socket = PooledSocket(socketFactory.connect(host, port), this)
+    private suspend fun allocate(): PooledChannel {
+        val socket = PooledChannel(socketFactory.acquire(host, port), this)
         pool.add(socket)
         return socket
     }
 
     @OptIn(ExperimentalCoroutinesApi::class)
-    fun free(socket: PooledSocket) {
-        require(pool.contains(socket))
+    fun closeChannel(channel: PooledChannel) {
+        require(pool.contains(channel))
         if (!freeSocketChannel.isClosedForSend) {
-            freeSocketChannel.offer(socket)
+            freeSocketChannel.offer(channel)
         }
         logger.debug("socket is freed")
     }
@@ -71,15 +71,15 @@ class ConnectionPool(private val host: String,
     }
 }
 
-class PooledSocket(
-    private val socket: RpcSocket,
-    private val pool: ConnectionPool): RpcSocket by socket {
+class PooledChannel(
+    private val channel: com.ludd.rpc.conn.Channel,
+    private val pool: ChannelPool): com.ludd.rpc.conn.Channel by channel {
 
     override fun close() = runBlocking{
-        pool.free(this@PooledSocket)
+        pool.closeChannel(this@PooledChannel)
     }
 
     fun free() {
-        socket.close()
+        channel.close()
     }
 }
